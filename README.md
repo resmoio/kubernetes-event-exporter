@@ -127,7 +127,7 @@ receivers:
         serverName: # optional, the domain, the certificate was issued for, in case it doesn't match the hostname used for the connection
         caFile: # optional, path to the CA file of the trusted authority the cert was signed with 
 ```
-### OpenSsearch
+### OpenSearch
 
 [OpenSearch](https://opensearch.org/) is a community-driven, open source search and analytics suite derived from Apache 2.0 licensed Elasticsearch 7.10.2 & Kibana 7.10.2.
 OpenSearch enables people to easily ingest, secure, search, aggregate, view, and analyze data. These capabilities are popular for use cases such as application search, log analytics, and more.
