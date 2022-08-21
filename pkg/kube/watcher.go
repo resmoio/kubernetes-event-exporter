@@ -3,12 +3,25 @@ package kube
 import (
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+)
+
+var (
+	eventsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "events_sent",
+		Help: "The total number of events sent",
+	})
+	watchErrors = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "watch_errors",
+		Help: "The total number of errors received from the informer",
+	})
 )
 
 type EventHandler func(event *EnhancedEvent)
@@ -37,6 +50,9 @@ func NewEventWatcher(config *rest.Config, namespace string, throttlePeriod int64
 	}
 
 	informer.AddEventHandler(watcher)
+	informer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
+		watchErrors.Inc()
+	})
 
 	return watcher
 }
@@ -69,6 +85,8 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		Str("reason", event.Reason).
 		Str("involvedObject", event.InvolvedObject.Name).
 		Msg("Received event")
+
+	eventsProcessed.Inc()
 
 	ev := &EnhancedEvent{
 		Event: *event.DeepCopy(),

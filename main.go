@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +12,9 @@ import (
 
 	"github.com/opsgenie/kubernetes-event-exporter/pkg/exporter"
 	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
@@ -18,6 +22,7 @@ import (
 
 var (
 	conf = flag.String("conf", "config.yaml", "The config path file")
+	addr = flag.String("metrics-address", ":2112", "The address to listen on for HTTP requests.")
 )
 
 func main() {
@@ -99,6 +104,22 @@ func main() {
 	} else {
 		w.Start()
 	}
+
+	// Setup the prometheus metrics machinery
+	// Add Go module build info.
+	prometheus.MustRegister(collectors.NewBuildInfoCollector())
+
+	// Expose the registered metrics via HTTP.
+	http.Handle("/metrics", promhttp.HandlerFor(
+		prometheus.DefaultGatherer,
+		promhttp.HandlerOpts{
+			// Opt into OpenMetrics to support exemplars.
+			EnableOpenMetrics: true,
+		},
+	))
+
+	// start up the http listener to expose the metrics
+	go http.ListenAndServe(*addr, nil)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
