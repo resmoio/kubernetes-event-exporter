@@ -3,6 +3,7 @@ package sinks
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/firehose"
@@ -13,6 +14,8 @@ type FirehoseConfig struct {
 	DeliveryStreamName string                 `yaml:"deliveryStreamName"`
 	Region             string                 `yaml:"region"`
 	Layout             map[string]interface{} `yaml:"layout"`
+	// DeDot all labels and annotations in the event. For both the event and the involvedObject
+	DeDot bool `yaml:"deDot"`
 }
 
 type FirehoseSink struct {
@@ -36,6 +39,11 @@ func NewFirehoseSink(cfg *FirehoseConfig) (Sink, error) {
 
 func (f *FirehoseSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	var toSend []byte
+
+	if e.cfg.DeDot {
+		de := ev.DeDot()
+		ev = &de
+	}
 
 	if f.cfg.Layout != nil {
 		res, err := convertLayoutTemplate(f.cfg.Layout, ev)
