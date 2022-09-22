@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,11 +19,32 @@ var (
 		Name: "events_sent",
 		Help: "The total number of events sent",
 	})
+	eventsCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "events_count",
+		Help: "The current number of event sent(server side)",
+	}, []string{"namespace", "name", "involved_object_namespace", "involved_object_name", "involved_object_kind", "reason", "type", "source"})
+	eventsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "events_total",
+		Help: "The total number of events received(watcher)",
+	}, []string{"namespace", "name", "involved_object_namespace", "involved_object_name", "involved_object_kind", "reason", "type", "source"})
 	watchErrors = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "watch_errors",
 		Help: "The total number of errors received from the informer",
 	})
 )
+
+func getMetricValues(event *corev1.Event) []string {
+	return []string{
+		event.ObjectMeta.Namespace,
+		event.ObjectMeta.Name,
+		event.InvolvedObject.Namespace,
+		event.InvolvedObject.Name,
+		event.InvolvedObject.Kind,
+		event.Reason,
+		event.Type,
+		fmt.Sprintf("%s/%s", event.Source.Host, event.Source.Component),
+	}
+}
 
 type EventHandler func(event *EnhancedEvent)
 
@@ -87,6 +109,8 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		Msg("Received event")
 
 	eventsProcessed.Inc()
+	eventsCount.WithLabelValues(getMetricValues(event)...).Set(float64(event.Count))
+	eventsTotal.WithLabelValues(getMetricValues(event)...).Inc()
 
 	ev := &EnhancedEvent{
 		Event: *event.DeepCopy(),
@@ -119,11 +143,13 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	}
 
 	e.fn(ev)
-	return
 }
 
 func (e *EventWatcher) OnDelete(obj interface{}) {
-	// Ignore deletes
+	// try to avoid OOMKill
+	event := obj.(*corev1.Event)
+	eventsCount.DeleteLabelValues(getMetricValues(event)...)
+	eventsTotal.DeleteLabelValues(getMetricValues(event)...)
 }
 
 func (e *EventWatcher) Start() {
