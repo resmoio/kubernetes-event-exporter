@@ -1,7 +1,7 @@
 package kube
 
 import (
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -42,7 +42,7 @@ func getMetricValues(event *corev1.Event) []string {
 		event.InvolvedObject.Kind,
 		event.Reason,
 		event.Type,
-		fmt.Sprintf("%s/%s", event.Source.Host, event.Source.Component),
+		strings.Join([]string{event.Source.Host, event.Source.Component}, "/"),
 	}
 }
 
@@ -109,8 +109,9 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		Msg("Received event")
 
 	eventsProcessed.Inc()
-	eventsCount.WithLabelValues(getMetricValues(event)...).Set(float64(event.Count))
-	eventsTotal.WithLabelValues(getMetricValues(event)...).Inc()
+	lvs := getMetricValues(event)
+	eventsCount.WithLabelValues(lvs...).Set(float64(event.Count))
+	eventsTotal.WithLabelValues(lvs...).Inc()
 
 	ev := &EnhancedEvent{
 		Event: *event.DeepCopy(),
@@ -148,8 +149,9 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 func (e *EventWatcher) OnDelete(obj interface{}) {
 	// try to avoid OOMKill
 	event := obj.(*corev1.Event)
-	eventsCount.DeleteLabelValues(getMetricValues(event)...)
-	eventsTotal.DeleteLabelValues(getMetricValues(event)...)
+	lvs := getMetricValues(event)
+	eventsCount.DeleteLabelValues(lvs...)
+	eventsTotal.DeleteLabelValues(lvs...)
 }
 
 func (e *EventWatcher) Start() {
