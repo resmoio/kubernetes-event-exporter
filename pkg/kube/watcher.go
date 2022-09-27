@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,12 +28,11 @@ var (
 type EventHandler func(event *EnhancedEvent)
 
 type EventWatcher struct {
-	informer        cache.SharedInformer
-	stopper         chan struct{}
-	labelCache      *LabelCache
-	annotationCache *AnnotationCache
-	fn              EventHandler
-	throttlePeriod  time.Duration
+	informer       cache.SharedInformer
+	stopper        chan struct{}
+	metaGetter     Getter
+	fn             EventHandler
+	throttlePeriod time.Duration
 }
 
 func NewEventWatcher(config *rest.Config, namespace string, throttlePeriod int64, fn EventHandler) *EventWatcher {
@@ -41,12 +41,11 @@ func NewEventWatcher(config *rest.Config, namespace string, throttlePeriod int64
 	informer := factory.Core().V1().Events().Informer()
 
 	watcher := &EventWatcher{
-		informer:        informer,
-		stopper:         make(chan struct{}),
-		labelCache:      NewLabelCache(config),
-		annotationCache: NewAnnotationCache(config),
-		fn:              fn,
-		throttlePeriod:  time.Second * time.Duration(throttlePeriod),
+		informer:       informer,
+		stopper:        make(chan struct{}),
+		metaGetter:     NewMetaCacheGetter(config),
+		fn:             fn,
+		throttlePeriod: time.Second * time.Duration(throttlePeriod),
 	}
 
 	informer.AddEventHandler(watcher)
@@ -90,35 +89,23 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	ev := &EnhancedEvent{
 		Event: *event.DeepCopy(),
 	}
+	metaSetter := func(_ context.Context) {
+		meta, err := e.metaGetter.Get(&ev.Event.InvolvedObject)
+		if err != nil {
+			if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
+				log.Error().Err(err).Msg("Cannot list labels of the object")
+			} else {
+				log.Debug().Err(err).Msg("Cannot list labels of the object (CRD)")
+			}
+		} else if meta != nil {
+			ev.InvolvedObject.Labels = meta.GetLabels()
+			ev.InvolvedObject.Annotations = meta.GetAnnotations()
+			ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
+		}
+	}
 	ev.Event.ManagedFields = nil
-
-	labels, err := e.labelCache.GetLabelsWithCache(&event.InvolvedObject)
-	if err != nil {
-		if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
-			log.Error().Err(err).Msg("Cannot list labels of the object")
-		} else {
-			log.Debug().Err(err).Msg("Cannot list labels of the object (CRD)")
-		}
-		// Ignoring error, but log it anyways
-	} else {
-		ev.InvolvedObject.Labels = labels
-		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
-	}
-
-	annotations, err := e.annotationCache.GetAnnotationsWithCache(&event.InvolvedObject)
-	if err != nil {
-		if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
-			log.Error().Err(err).Msg("Cannot list annotations of the object")
-		} else {
-			log.Debug().Err(err).Msg("Cannot list annotations of the object (CRD)")
-		}
-	} else {
-		ev.InvolvedObject.Annotations = annotations
-		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
-	}
-
+	ev.setters = append(ev.setters, metaSetter)
 	e.fn(ev)
-	return
 }
 
 func (e *EventWatcher) OnDelete(obj interface{}) {

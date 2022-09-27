@@ -1,8 +1,10 @@
 package exporter
 
 import (
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"context"
 	"regexp"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 // matchString is a method to clean the code. Error handling is omitted here because these
@@ -55,6 +57,8 @@ func (r *Rule) MatchesEvent(ev *kube.EnhancedEvent) bool {
 			}
 		}
 	}
+	// run complete function to fullfil metadata
+	ev.Complete(context.Background())
 
 	// Labels are also mutually exclusive, they all need to be present
 	if r.Labels != nil && len(r.Labels) > 0 {
@@ -85,12 +89,5 @@ func (r *Rule) MatchesEvent(ev *kube.EnhancedEvent) bool {
 	}
 
 	// If minCount is not given via a config, it's already 0 and the count is already 1 and this passes.
-	if ev.Count >= r.MinCount {
-		return true
-	} else {
-		return false
-	}
-
-	// If it failed every step, it must match because our matchers are limiting
-	return true
+	return ev.Count >= r.MinCount
 }

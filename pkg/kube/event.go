@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ type EnhancedEvent struct {
 	corev1.Event   `json:",inline"`
 	ClusterName    string                  `json:"clusterName"`
 	InvolvedObject EnhancedObjectReference `json:"involvedObject"`
+	setters        []func(context.Context)
 }
 
 // DeDot replaces all dots in the labels and annotations with underscores. This is required for example in the
@@ -68,4 +70,10 @@ func (e *EnhancedEvent) GetTimestampISO8601() string {
 
 	layout := "2006-01-02T15:04:05.000Z"
 	return timestamp.Format(layout)
+}
+
+func (e *EnhancedEvent) Complete(ctx context.Context) {
+	for i := range e.setters {
+		e.setters[i](ctx)
+	}
 }
