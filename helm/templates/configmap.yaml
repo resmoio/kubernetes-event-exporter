@@ -7,4 +7,4 @@ metadata:
 {{ include "labels" . | indent 4 }}
 data:
   config.yaml: |
-  {{ .Values.config | toYaml | indent 4 }}
+{{ .Values.config | toYaml | indent 4 }}
