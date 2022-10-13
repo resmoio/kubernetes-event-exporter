@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-exporter
+  namespace: "{{ .Release.Namespace }}"
+  {{ include "annotations" . | indent 2 }}
+  labels:
+  {{ include "labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  template:
+    metadata:
+      labels:
+      {{ include "labels" . | indent 8 }}
+    spec:
+      serviceAccountName: event-exporter-sa
+      containers:
+        - name: event-exporter
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{ if .Values.resources }}
+          resources:
+{{ .Values.resources | toYaml | indent 12 }}
+          {{ end }}
+          args:
+            - -conf=/data/config.yaml
+          volumeMounts:
+            - mountPath: /data
+              name: cfg
+      volumes:
+        - name: cfg
+          configMap:
+            name: event-exporter-configmap
+  selector:
+    matchLabels:
+    {{ include "labels" . | indent 8 }}
