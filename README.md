@@ -204,7 +204,7 @@ Kinesis is an AWS service allows to collect high throughput messages and allow i
 # ...
 receivers:
   - name: "kinesis"
-    kineis:
+    kinesis:
       streamName: "events-pipeline"
       region: us-west-2
       layout: # Optional
