@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
 )
@@ -20,15 +21,23 @@ type WebhookConfig struct {
 }
 
 func NewWebhook(cfg *WebhookConfig) (Sink, error) {
-	return &Webhook{cfg: cfg}, nil
+	tlsClientConfig, err := setupTLS(&cfg.TLS)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup TLS: %w", err)
+	}
+	return &Webhook{cfg: cfg, trasport: &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: tlsClientConfig,
+	}}, nil
 }
 
 type Webhook struct {
-	cfg *WebhookConfig
+	cfg      *WebhookConfig
+	trasport *http.Transport
 }
 
 func (w *Webhook) Close() {
-	// No-op
+	w.trasport.CloseIdleConnections()
 }
 
 func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
@@ -54,15 +63,8 @@ func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 		}
 	}
 
-	tlsClientConfig, err := setupTLS(&w.cfg.TLS)
-	if err != nil {
-		return fmt.Errorf("failed to setup TLS: %w", err)
-	}
 	client := http.DefaultClient
-	client.Transport = &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: tlsClientConfig,
-	}
+	client.Transport = w.trasport
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
