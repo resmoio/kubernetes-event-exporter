@@ -15,6 +15,8 @@ func GetKubernetesClient() (*kubernetes.Clientset, error) {
 		return nil, err
 	}
 
+        // alert NewForConfig puts in a ratelimiter
+	// https://github.com/kubernetes/client-go/blob/19b2e89c0c69f6993215b8547d447d87a8fc0ac7/kubernetes/clientset.go#L431
 	return kubernetes.NewForConfig(config)
 }
 

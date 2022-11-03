@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	conf = flag.String("conf", "config.yaml", "The config path file")
-	addr = flag.String("metrics-address", ":2112", "The address to listen on for HTTP requests.")
+	conf          = flag.String("conf", "config.yaml", "The config path file")
+	addr          = flag.String("metrics-address", ":2112", "The address to listen on for HTTP requests.")
+	strictCaching = flag.Bool("strict-caching", false, "Include the resourceVersion in the cache key to be more strict on cache accuracy")
 )
 
 func main() {
@@ -84,7 +85,14 @@ func main() {
 			engine.OnEvent(event)
 		}
 	}
-	w := kube.NewEventWatcher(kubeconfig, cfg.Namespace, cfg.ThrottlePeriod, onEvent)
+
+	cacheKeyGetter := kube.DefaultCacheKeyGetter
+	if *strictCaching {
+		log.Info().Msg("Using strict cache keys")
+		cacheKeyGetter = kube.EnhancedEventCacheKeyGetter
+	}
+
+	w := kube.NewEventWatcherWithKey(kubeconfig, cfg.Namespace, cfg.ThrottlePeriod, onEvent, cacheKeyGetter)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	leaderLost := make(chan bool)

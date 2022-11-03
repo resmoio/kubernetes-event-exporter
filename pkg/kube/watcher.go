@@ -1,10 +1,9 @@
 package kube
 
 import (
+	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
@@ -13,18 +12,15 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-var (
-	eventsProcessed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "events_sent",
-		Help: "The total number of events sent",
-	})
-	watchErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "watch_errors",
-		Help: "The total number of errors received from the informer",
-	})
-)
-
 type EventHandler func(event *EnhancedEvent)
+
+type CacheKeyGetter func(ev *EnhancedEvent, args ...string) interface{}
+func DefaultCacheKeyGetter(ev *EnhancedEvent, args ...string) interface{} {
+	return ev.InvolvedObject.UID
+}
+func EnhancedEventCacheKeyGetter(ev *EnhancedEvent, args ...string) interface{} {
+        return strings.Join([]string{string(ev.Event.InvolvedObject.UID), ev.Event.InvolvedObject.ResourceVersion}, "/")
+}
 
 type EventWatcher struct {
 	informer        cache.SharedInformer
@@ -33,9 +29,13 @@ type EventWatcher struct {
 	annotationCache *AnnotationCache
 	fn              EventHandler
 	throttlePeriod  time.Duration
+	getCacheKey     CacheKeyGetter
 }
 
 func NewEventWatcher(config *rest.Config, namespace string, throttlePeriod int64, fn EventHandler) *EventWatcher {
+	return NewEventWatcherWithKey(config, namespace, throttlePeriod, fn, DefaultCacheKeyGetter)
+}
+func NewEventWatcherWithKey(config *rest.Config, namespace string, throttlePeriod int64, fn EventHandler, getKey CacheKeyGetter) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	informer := factory.Core().V1().Events().Informer()
@@ -47,6 +47,7 @@ func NewEventWatcher(config *rest.Config, namespace string, throttlePeriod int64
 		annotationCache: NewAnnotationCache(config),
 		fn:              fn,
 		throttlePeriod:  time.Second * time.Duration(throttlePeriod),
+		getCacheKey:     getKey,
 	}
 
 	informer.AddEventHandler(watcher)
@@ -78,6 +79,13 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		return
 	}
 
+	ev := &EnhancedEvent{
+		Event: *event.DeepCopy(),
+	}
+	ev.Event.ManagedFields = nil
+
+	cacheKey := e.getCacheKey(ev)
+
 	log.Debug().
 		Str("msg", event.Message).
 		Str("clustername", event.ClusterName).
@@ -88,12 +96,7 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 
 	eventsProcessed.Inc()
 
-	ev := &EnhancedEvent{
-		Event: *event.DeepCopy(),
-	}
-	ev.Event.ManagedFields = nil
-
-	labels, err := e.labelCache.GetLabelsWithCache(&event.InvolvedObject)
+	labels, err := e.labelCache.GetLabelsWithCache(cacheKey, &event.InvolvedObject)
 	if err != nil {
 		if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
 			log.Error().Err(err).Msg("Cannot list labels of the object")
@@ -106,7 +109,7 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
 	}
 
-	annotations, err := e.annotationCache.GetAnnotationsWithCache(&event.InvolvedObject)
+	annotations, err := e.annotationCache.GetAnnotationsWithCache(cacheKey, &event.InvolvedObject)
 	if err != nil {
 		if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
 			log.Error().Err(err).Msg("Cannot list annotations of the object")
