@@ -25,7 +25,7 @@ func NewWebhook(cfg *WebhookConfig) (Sink, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup TLS: %w", err)
 	}
-	return &Webhook{cfg: cfg, trasport: &http.Transport{
+	return &Webhook{cfg: cfg, transport: &http.Transport{
 		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: tlsClientConfig,
 	}}, nil
@@ -33,11 +33,11 @@ func NewWebhook(cfg *WebhookConfig) (Sink, error) {
 
 type Webhook struct {
 	cfg      *WebhookConfig
-	trasport *http.Transport
+	transport *http.Transport
 }
 
 func (w *Webhook) Close() {
-	w.trasport.CloseIdleConnections()
+	w.transport.CloseIdleConnections()
 }
 
 func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
@@ -64,7 +64,7 @@ func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	}
 
 	client := http.DefaultClient
-	client.Transport = w.trasport
+	client.Transport = w.transport
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
