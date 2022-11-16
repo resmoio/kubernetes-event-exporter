@@ -86,35 +86,6 @@ func main() {
 		}
 	}
 
-	cacheKeyGetter := kube.DefaultCacheKeyGetter
-	if *strictCaching {
-		log.Info().Msg("Using strict cache keys")
-		cacheKeyGetter = kube.EnhancedEventCacheKeyGetter
-	}
-
-	w := kube.NewEventWatcherWithKey(kubeconfig, cfg.Namespace, cfg.ThrottlePeriod, onEvent, cacheKeyGetter)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	leaderLost := make(chan bool)
-	if cfg.LeaderElection.Enabled {
-		l, err := kube.NewLeaderElector(cfg.LeaderElection.LeaderElectionID, kubeconfig,
-			func(_ context.Context) {
-				log.Info().Msg("leader election got")
-				w.Start()
-			},
-			func() {
-				log.Error().Msg("leader election lost")
-				leaderLost <- true
-			},
-		)
-		if err != nil {
-			log.Fatal().Err(err).Msg("create leaderelector failed")
-		}
-		go l.Run(ctx)
-	} else {
-		w.Start()
-	}
-
 	// Setup the prometheus metrics machinery
 	// Add Go module build info.
 	prometheus.MustRegister(collectors.NewBuildInfoCollector())
@@ -131,24 +102,73 @@ func main() {
 	// start up the http listener to expose the metrics
 	go http.ListenAndServe(*addr, nil)
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	cacheKeyGetter := kube.DefaultCacheKeyGetter
+	if *strictCaching {
+		log.Info().Msg("Using strict cache keys")
+		cacheKeyGetter = kube.EnhancedEventCacheKeyGetter
+	}
+
+	w := kube.NewEventWatcherWithKey(kubeconfig, cfg.Namespace, cfg.ThrottlePeriod, onEvent, cacheKeyGetter)
+
+	if cfg.LeaderElection.Enabled {
+
+		// when we get the signal shutdown the context
+		// and get out of Run
+		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer cancel()
+
+		l, err := kube.NewLeaderElector(cfg.LeaderElection.LeaderElectionID, kubeconfig,
+			func(_ context.Context) {
+				log.Info().Msg("leader election won")
+				w.Start()
+			},
+			func() {
+				log.Error().Msg("leader election lost")
+			},
+			func(identity string) {
+				if identity == kube.GetLeaderElectionID(cfg.LeaderElection.LeaderElectionID) {
+					// its me
+					// its my own lock
+					// do nothing
+					log.Info().Msgf("I was elected: %s", identity)
+					return
+				}
+				log.Info().Msgf("new leader elected: %s", identity)
+			},
+		)
+		if err != nil {
+			log.Fatal().Err(err).Msg("create leaderelector failed")
+		}
+
+		// stop here and run
+		// this allows us to keep watching until the next guy gets the lease
+		// Run starts the leader election loop. Run will not return
+		// before leader election loop is stopped by ctx or it has
+		// stopped holding the leader lease
+		// https://github.com/kubernetes/client-go/blob/master/tools/leaderelection/leaderelection.go#L197
+		l.Run(ctx)
+		// we either got a signal or we lost the lease
+		// we need to wait LeaseDuration to stop watching
+		// we can't stop pulling events until somebody else takes over
+		// so we sleep for LeaseDuration
+		log.Info().Msgf("we got the signal. waiting leaseDuration seconds to stop: %s", kube.GetLeaseDuration())
+		time.Sleep(kube.GetLeaseDuration())
+	} else {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+		w.Start()
+		select {
+		case sig := <-c:
+			log.Info().Str("signal", sig.String()).Msg("Received signal to exit")
+		}
+	}
 
 	gracefulExit := func() {
-		defer close(c)
-		defer close(leaderLost)
-		cancel()
 		w.Stop()
 		engine.Stop()
 		log.Info().Msg("Exiting")
 	}
 
-	select {
-	case sig := <-c:
-		log.Info().Str("signal", sig.String()).Msg("Received signal to exit")
-		gracefulExit()
-	case <-leaderLost:
-		log.Warn().Msg("Leader election lost")
-		gracefulExit()
-	}
+	log.Info().Msg("Received signal to exit")
+	gracefulExit()
 }

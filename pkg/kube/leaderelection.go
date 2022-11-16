@@ -29,12 +29,24 @@ const (
 	defaultRetryPeriod      = 2 * time.Second
 )
 
+// GetLeaseDuration
+func GetLeaseDuration() time.Duration {
+	return defaultLeaseDuration
+}
+
+// GetLeaderElectionID this set the default value if we were
+// not given a LeaderElectionID
+func GetLeaderElectionID(givenID string) string {
+	if givenID == "" {
+	  return defaultLeaderElectionID
+	}
+
+	return givenID
+}
 // NewResourceLock creates a new config map resource lock for use in a leader
 // election loop
 func newResourceLock(config *rest.Config, leaderElectionID string) (resourcelock.Interface, error) {
-	if leaderElectionID == "" {
-		leaderElectionID = defaultLeaderElectionID
-	}
+	leaderElectionID = GetLeaderElectionID(leaderElectionID)
 
 	leaderElectionNamespace, err := getInClusterNamespace()
 	if err != nil {
@@ -83,7 +95,7 @@ func getInClusterNamespace() (string, error) {
 }
 
 // NewLeaderElector return  a leader elector object using client-go
-func NewLeaderElector(leaderElectionID string, config *rest.Config, startFunc func(context.Context), stopFunc func()) (*leaderelection.LeaderElector, error) {
+func NewLeaderElector(leaderElectionID string, config *rest.Config, startFunc func(context.Context), stopFunc func(), onNew func(string)) (*leaderelection.LeaderElector, error) {
 	resourceLock, err := newResourceLock(config, leaderElectionID)
 	if err != nil {
 		return &leaderelection.LeaderElector{}, err
@@ -97,6 +109,7 @@ func NewLeaderElector(leaderElectionID string, config *rest.Config, startFunc fu
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: startFunc,
 			OnStoppedLeading: stopFunc,
+			OnNewLeader: onNew,
 		},
 	})
 	return l, err

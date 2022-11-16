@@ -15,11 +15,12 @@ import (
 type EventHandler func(event *EnhancedEvent)
 
 type CacheKeyGetter func(ev *EnhancedEvent, args ...string) interface{}
+
 func DefaultCacheKeyGetter(ev *EnhancedEvent, args ...string) interface{} {
 	return ev.InvolvedObject.UID
 }
 func EnhancedEventCacheKeyGetter(ev *EnhancedEvent, args ...string) interface{} {
-        return strings.Join([]string{string(ev.Event.InvolvedObject.UID), ev.Event.InvolvedObject.ResourceVersion}, "/")
+	return strings.Join([]string{string(ev.Event.InvolvedObject.UID), ev.Event.InvolvedObject.ResourceVersion}, "/")
 }
 
 type EventWatcher struct {
@@ -76,6 +77,7 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		timestamp = event.EventTime.Time
 	}
 	if time.Since(timestamp) > e.throttlePeriod {
+		log.Debug().Str("reason", event.Reason).Str("throttlePeriod", e.throttlePeriod.String()).Msg("dropping old event")
 		return
 	}
 
