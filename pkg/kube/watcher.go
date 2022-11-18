@@ -22,6 +22,8 @@ var (
 		Name: "watch_errors",
 		Help: "The total number of errors received from the informer",
 	})
+
+	startUpTime = time.Now()
 )
 
 type EventHandler func(event *EnhancedEvent)
@@ -74,7 +76,16 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	if timestamp.IsZero() {
 		timestamp = event.EventTime.Time
 	}
-	if time.Since(timestamp) > e.throttlePeriod {
+
+	eventAge := time.Since(timestamp)
+	if  eventAge > e.throttlePeriod {
+		if time.Now().Sub(startUpTime) > eventAge {
+			log.Warn().
+				Str("event age", eventAge.String()).
+				Str("event namespace", event.Namespace).
+				Str("event name", event.Name).
+				Msg("Event discarded as being older then throttlePeriod")
+		}
 		return
 	}
 
