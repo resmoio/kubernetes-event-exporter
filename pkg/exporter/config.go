@@ -47,11 +47,11 @@ func (c *Config) validateMaxEventAgeSeconds() {
 		log.Fatal().Msg("cannot set both throttlePeriod (depricated) and MaxEventAgeSeconds")
 	} else if c.ThrottlePeriod != 0 {
 		log_value := strconv.FormatInt(c.ThrottlePeriod, 10)
-		log.Info().Msg("config.maxEventAgeSeconds="+log_value)
+		log.Info().Msg("config.maxEventAgeSeconds=" + log_value)
 		log.Warn().Msg("config.throttlePeriod is depricated, consider using config.maxEventAgeSeconds instead")
 		c.MaxEventAgeSeconds = c.ThrottlePeriod
 	} else {
 		log_value := strconv.FormatInt(c.MaxEventAgeSeconds, 10)
-		log.Info().Msg("config.maxEventAgeSeconds="+log_value)
+		log.Info().Msg("config.maxEventAgeSeconds=" + log_value)
 	}
 }

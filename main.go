@@ -62,7 +62,7 @@ func main() {
 	} else {
 		log.Fatal().Str("log_format", cfg.LogFormat).Msg("Unknown log format")
 	}
-	
+
 	cfg.Validate()
 
 	kubeconfig, err := kube.GetKubernetesConfig()
