@@ -18,6 +18,10 @@ var (
 		Name: "events_sent",
 		Help: "The total number of events sent",
 	})
+	eventsDiscarded = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "events_discarded",
+		Help: "The total number of events discarded because of being older than the throttled period specified",
+	})
 	watchErrors = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "watch_errors",
 		Help: "The total number of errors received from the informer",
@@ -81,10 +85,11 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	if  eventAge > e.throttlePeriod {
 		if time.Now().Sub(startUpTime) > eventAge {
 			log.Warn().
-				Str("event age", eventAge.String()).
-				Str("event namespace", event.Namespace).
-				Str("event name", event.Name).
-				Msg("Event discarded as being older then throttlePeriod")
+			Str("event age", eventAge.String()).
+			Str("event namespace", event.Namespace).
+			Str("event name", event.Name).
+			Msg("Event discarded as being older then throttlePeriod")
+			eventsDiscarded.Inc()
 		}
 		return
 	}
