@@ -20,7 +20,7 @@ var (
 	})
 	eventsDiscarded = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "events_discarded",
-		Help: "The total number of events discarded because of being older than the throttled period specified",
+		Help: "The total number of events discarded because of being older than the maxEventAgeSeconds specified",
 	})
 	watchErrors = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "watch_errors",
@@ -33,26 +33,26 @@ var (
 type EventHandler func(event *EnhancedEvent)
 
 type EventWatcher struct {
-	informer        cache.SharedInformer
-	stopper         chan struct{}
-	labelCache      *LabelCache
-	annotationCache *AnnotationCache
-	fn              EventHandler
-	throttlePeriod  time.Duration
+	informer           cache.SharedInformer
+	stopper            chan struct{}
+	labelCache         *LabelCache
+	annotationCache    *AnnotationCache
+	fn                 EventHandler
+	MaxEventAgeSeconds time.Duration
 }
 
-func NewEventWatcher(config *rest.Config, namespace string, throttlePeriod int64, fn EventHandler) *EventWatcher {
+func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, fn EventHandler) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	informer := factory.Core().V1().Events().Informer()
 
 	watcher := &EventWatcher{
-		informer:        informer,
-		stopper:         make(chan struct{}),
-		labelCache:      NewLabelCache(config),
-		annotationCache: NewAnnotationCache(config),
-		fn:              fn,
-		throttlePeriod:  time.Second * time.Duration(throttlePeriod),
+		informer:           informer,
+		stopper:            make(chan struct{}),
+		labelCache:         NewLabelCache(config),
+		annotationCache:    NewAnnotationCache(config),
+		fn:                 fn,
+		MaxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
 	}
 
 	informer.AddEventHandler(watcher)
@@ -72,24 +72,31 @@ func (e *EventWatcher) OnUpdate(oldObj, newObj interface{}) {
 	// Ignore updates
 }
 
-func (e *EventWatcher) onEvent(event *corev1.Event) {
-	// TODO: Re-enable this after development
-	// It's probably an old event we are catching, it's not the best way but anyways
+// Ignore events older than the maxEventAgeSeconds
+func (e *EventWatcher) isEventDiscarded(event *corev1.Event) bool {
 	timestamp := event.LastTimestamp.Time
 	if timestamp.IsZero() {
 		timestamp = event.EventTime.Time
 	}
-
 	eventAge := time.Since(timestamp)
-	if  eventAge > e.throttlePeriod {
-		if time.Now().Sub(startUpTime) > eventAge {
+	if eventAge > e.MaxEventAgeSeconds {
+		// Log discarded events if they were created after the watcher started
+		// (to suppres warnings from initial synchrnization)
+		if timestamp.After(startUpTime) {
 			log.Warn().
-			Str("event age", eventAge.String()).
-			Str("event namespace", event.Namespace).
-			Str("event name", event.Name).
-			Msg("Event discarded as being older then throttlePeriod")
+				Str("event age", eventAge.String()).
+				Str("event namespace", event.Namespace).
+				Str("event name", event.Name).
+				Msg("Event discarded as being older then maxEventAgeSeconds")
 			eventsDiscarded.Inc()
 		}
+		return true
+	}
+	return false
+}
+
+func (e *EventWatcher) onEvent(event *corev1.Event) {
+	if e.isEventDiscarded(event) {
 		return
 	}
 

@@ -62,10 +62,8 @@ func main() {
 	} else {
 		log.Fatal().Str("log_format", cfg.LogFormat).Msg("Unknown log format")
 	}
-
-	if cfg.ThrottlePeriod == 0 {
-		cfg.ThrottlePeriod = 5
-	}
+	
+	cfg.Validate()
 
 	kubeconfig, err := kube.GetKubernetesConfig()
 	if err != nil {
@@ -84,7 +82,7 @@ func main() {
 			engine.OnEvent(event)
 		}
 	}
-	w := kube.NewEventWatcher(kubeconfig, cfg.Namespace, cfg.ThrottlePeriod, onEvent)
+	w := kube.NewEventWatcher(kubeconfig, cfg.Namespace, cfg.MaxEventAgeSeconds, onEvent)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	leaderLost := make(chan bool)
