@@ -52,15 +52,21 @@ receivers:
 * A route can have many sub-routes, forming a tree.
 * Routing starts from the root route.
 
-## Note:
+## Troubleshoot "Events Discarded" warning:
 
-If you are operating a big cluster with many events, you might want to adjust the following values in configuration to
-avoid throttling issues:
-
-```
-kubeQPS: 60
-kubeBurst: 60
-```
+- If there are `client-side throttling` warnings in the event-exporter log:  
+  Adjust the following values in configuration:  
+    ```
+    kubeQPS: 100
+    kubeBurst: 500
+    ```
+  > `Burst` to roughly match your events per minute  
+  > `QPS`   to be 1/5 of the burst  
+- If there is no request throttling, but events are still dropped:
+  Consider increasing events cut off age
+    ```
+    maxEventAgeSeconds: 60
+    ```
 
 ### Opsgenie
 
@@ -271,13 +277,10 @@ Standard out is also another file in Linux. `logLevel` refers to the application
 `trace`, `debug`, `info`, `warn`, `error`, `fatal` and `panic`. When not specified, default level is set to `info`. You
 can use the following configuration as an example.
 
-By default, events emit with eventime > 5seconds since catching are not collected.
-You can set this period with trottlePeriod in seconds. Consider to increase time of seconds to catch more events like "Backoff".
-
 ```yaml
 logLevel: error
 logFormat: json
-trottlePeriod: 5
+maxEventAgeSeconds: 5
 route:
   routes:
     - match:

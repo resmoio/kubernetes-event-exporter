@@ -1,6 +1,6 @@
 logLevel: debug
 logFormat: json
-throttlePeriod: 10
+maxEventAgeSeconds: 10
 kubeQPS: 60
 kubeBurst: 60
 # namespace: my-namespace-only # Omitting it defaults to all namespaces.
