@@ -141,7 +141,6 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	}
 
 	e.fn(ev)
-	return
 }
 
 func (e *EventWatcher) OnDelete(obj interface{}) {
@@ -155,4 +154,15 @@ func (e *EventWatcher) Start() {
 func (e *EventWatcher) Stop() {
 	e.stopper <- struct{}{}
 	close(e.stopper)
+}
+
+func NewMockEventWatcher(MaxEventAgeSeconds int64) *EventWatcher {
+	watcher := &EventWatcher{
+		MaxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
+	}
+	return watcher
+}
+
+func (e *EventWatcher) SetStartUpTime(time time.Time) {
+	startUpTime = time
 }
