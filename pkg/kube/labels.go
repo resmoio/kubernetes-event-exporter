@@ -1,13 +1,15 @@
 package kube
 
 import (
+	"sync"
+
 	lru "github.com/hashicorp/golang-lru"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"sync"
 )
 
 type LabelCache struct {
@@ -18,7 +20,7 @@ type LabelCache struct {
 	sync.RWMutex
 }
 
-func NewLabelCache(kubeconfig *rest.Config) (*LabelCache) {
+func NewLabelCache(kubeconfig *rest.Config) *LabelCache {
 	cache, err := lru.NewARC(1024)
 	if err != nil {
 		panic("cannot init cache: " + err.Error())
@@ -54,4 +56,13 @@ func (l *LabelCache) GetLabelsWithCache(reference *v1.ObjectReference) (map[stri
 
 	// An non-ignorable error occurred
 	return nil, err
+}
+
+func NewMockLabelCache() *LabelCache {
+	cache, _ := lru.NewARC(1024)
+	uid := types.UID("test")
+	cache.Add(uid, map[string]string{"test": "test"})
+	return &LabelCache{
+		cache: cache,
+	}
 }

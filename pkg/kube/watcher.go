@@ -38,7 +38,7 @@ type EventWatcher struct {
 	labelCache         *LabelCache
 	annotationCache    *AnnotationCache
 	fn                 EventHandler
-	MaxEventAgeSeconds time.Duration
+	maxEventAgeSeconds time.Duration
 }
 
 func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, fn EventHandler) *EventWatcher {
@@ -52,7 +52,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		labelCache:         NewLabelCache(config),
 		annotationCache:    NewAnnotationCache(config),
 		fn:                 fn,
-		MaxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
+		maxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
 	}
 
 	informer.AddEventHandler(watcher)
@@ -79,7 +79,7 @@ func (e *EventWatcher) isEventDiscarded(event *corev1.Event) bool {
 		timestamp = event.EventTime.Time
 	}
 	eventAge := time.Since(timestamp)
-	if eventAge > e.MaxEventAgeSeconds {
+	if eventAge > e.maxEventAgeSeconds {
 		// Log discarded events if they were created after the watcher started
 		// (to suppres warnings from initial synchrnization)
 		if timestamp.After(startUpTime) {
@@ -158,7 +158,10 @@ func (e *EventWatcher) Stop() {
 
 func NewMockEventWatcher(MaxEventAgeSeconds int64) *EventWatcher {
 	watcher := &EventWatcher{
-		MaxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
+		labelCache:         NewMockLabelCache(),
+		annotationCache:    NewMockAnnotationCache(),
+		maxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
+		fn:                 func(event *EnhancedEvent) {},
 	}
 	return watcher
 }
