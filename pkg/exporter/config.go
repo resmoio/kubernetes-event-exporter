@@ -1,6 +1,7 @@
 package exporter
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
@@ -27,7 +28,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	c.validateDefaults()
+	if err := c.validateDefaults(); err != nil {
+		return err
+	}
 
 	// No duplicate receivers
 	// Receivers individually
@@ -35,16 +38,20 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) validateDefaults() {
-	c.validateMaxEventAgeSeconds()
+func (c *Config) validateDefaults() error {
+	if err := c.validateMaxEventAgeSeconds(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (c *Config) validateMaxEventAgeSeconds() {
+func (c *Config) validateMaxEventAgeSeconds() error {
 	if c.ThrottlePeriod == 0 && c.MaxEventAgeSeconds == 0 {
 		c.MaxEventAgeSeconds = 5
 		log.Info().Msg("set config.maxEventAgeSeconds=5 (default)")
 	} else if c.ThrottlePeriod != 0 && c.MaxEventAgeSeconds != 0 {
-		log.Fatal().Msg("cannot set both throttlePeriod (depricated) and MaxEventAgeSeconds")
+		log.Error().Msg("cannot set both throttlePeriod (depricated) and MaxEventAgeSeconds")
+		return errors.New("validateMaxEventAgeSeconds failed")
 	} else if c.ThrottlePeriod != 0 {
 		log_value := strconv.FormatInt(c.ThrottlePeriod, 10)
 		log.Info().Msg("config.maxEventAgeSeconds=" + log_value)
@@ -54,4 +61,5 @@ func (c *Config) validateMaxEventAgeSeconds() {
 		log_value := strconv.FormatInt(c.MaxEventAgeSeconds, 10)
 		log.Info().Msg("config.maxEventAgeSeconds=" + log_value)
 	}
+	return nil
 }

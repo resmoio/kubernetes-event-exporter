@@ -10,8 +10,9 @@ import (
 
 func TestValidate_IsCheckingMaxEventAgeSeconds_WhenNotSet(t *testing.T) {
 	config := Config{}
-	config.Validate()
+	err := config.Validate()
 	assert.True(t, config.MaxEventAgeSeconds == 5)
+	assert.NoError(t, err)
 }
 
 func TestValidate_IsCheckingMaxEventAgeSeconds_WhenThrottledPeriodSet(t *testing.T) {
@@ -21,11 +22,12 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenThrottledPeriodSet(t *testing
 	config := Config{
 		ThrottlePeriod: 123,
 	}
-	config.Validate()
+	err := config.Validate()
 
 	assert.True(t, config.MaxEventAgeSeconds == 123)
 	assert.Contains(t, output.String(), "config.maxEventAgeSeconds=123")
 	assert.Contains(t, output.String(), "config.throttlePeriod is depricated, consider using config.maxEventAgeSeconds instead")
+	assert.NoError(t, err)
 }
 
 func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsSet(t *testing.T) {
@@ -35,9 +37,10 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsSet(t *test
 	config := Config{
 		MaxEventAgeSeconds: 123,
 	}
-	config.Validate()
+	err := config.Validate()
 	assert.True(t, config.MaxEventAgeSeconds == 123)
 	assert.Contains(t, output.String(), "config.maxEventAgeSeconds=123")
+	assert.NoError(t, err)
 }
 
 func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsAndThrottledPeriodSet(t *testing.T) {
@@ -48,7 +51,7 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsAndThrottle
 		ThrottlePeriod:     123,
 		MaxEventAgeSeconds: 321,
 	}
-	config.Validate()
-	// should call log.Fatal() so the program will exit
-	assert.True(t, false)
+	err := config.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, output.String(), "cannot set both throttlePeriod (depricated) and MaxEventAgeSeconds")
 }
