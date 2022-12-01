@@ -1,4 +1,4 @@
-FROM golang:1.18 AS builder
+FROM golang:1.18.8 AS builder
 
 ADD . /app
 WORKDIR /app
