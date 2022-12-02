@@ -35,24 +35,22 @@ type TLS struct {
 }
 
 func setupTLS(cfg *TLS) (*tls.Config, error) {
-	var caCert []byte
+	tlsClientConfig := &tls.Config{
+		InsecureSkipVerify: cfg.InsecureSkipVerify,
+		ServerName:         cfg.ServerName,
+	}
 
 	if len(cfg.CaFile) > 0 {
 		readFile, err := ioutil.ReadFile(cfg.CaFile)
 		if err != nil {
 			return nil, err
 		}
-		caCert = readFile
-	}
 
-	tlsClientConfig := &tls.Config{
-		InsecureSkipVerify: cfg.InsecureSkipVerify,
-		ServerName:         cfg.ServerName,
-	}
-	if len(cfg.KeyFile) > 0 && len(cfg.CertFile) > 0 {
 		tlsClientConfig.RootCAs = x509.NewCertPool()
-		tlsClientConfig.RootCAs.AppendCertsFromPEM(caCert)
+		tlsClientConfig.RootCAs.AppendCertsFromPEM(readFile)
+	}
 
+	if len(cfg.KeyFile) > 0 && len(cfg.CertFile) > 0 {
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
 			return nil, fmt.Errorf("could not read client certificate or key: %w", err)
