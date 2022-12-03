@@ -67,7 +67,7 @@ func main() {
 		cfg.ThrottlePeriod = 5
 	}
 
-	kubeconfig, err := kube.GetKubernetesConfig()
+	kubeconfig, err := kube.GetKubernetesConfig(cfg.Kubeconfig)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot get kubeconfig")
 	}

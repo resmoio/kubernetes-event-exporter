@@ -3,6 +3,8 @@ logFormat: json
 throttlePeriod: 10
 kubeQPS: 60
 kubeBurst: 60
+# If it's not set, will try to use the in-cluster config.
+kubeconfig: /etc/kubernetes/kubeconfig
 # namespace: my-namespace-only # Omitting it defaults to all namespaces.
 route:
   # Main route
@@ -31,10 +33,10 @@ receivers:
         - "http://localhost:9200"
       indexFormat: "kube-events-{2006-01-02}"
   - name: "opensearch-dump"
-      opensearch:
-        hosts:
-          - "http://localhost:9200"
-        indexFormat: "kube-events-{2006-01-02}"
+    opensearch:
+      hosts:
+        - "http://localhost:9200"
+      indexFormat: "kube-events-{2006-01-02}"
   - name: "alert"
     opsgenie:
       apiKey: ""
