@@ -23,7 +23,7 @@ type Rule struct {
 	Namespace   string
 	Reason      string
 	Type        string
-	MinCount    int32
+	MinCount    int32 `yaml:"minCount"`
 	Component   string
 	Host        string
 	Receiver    string
