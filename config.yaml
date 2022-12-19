@@ -1,5 +1,6 @@
 logLevel: error
 logFormat: json
+clusterName: my-super-local-cluster
 route:
   routes:
     - match:

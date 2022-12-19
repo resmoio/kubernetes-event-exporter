@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/sinks"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"

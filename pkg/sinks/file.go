@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -41,7 +41,7 @@ func NewFileSink(config *FileConfig) (*File, error) {
 		writer:  writer,
 		encoder: json.NewEncoder(writer),
 		layout:  config.Layout,
-		DeDot: config.DeDot,
+		DeDot:   config.DeDot,
 	}, nil
 }
 

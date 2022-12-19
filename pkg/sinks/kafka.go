@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"github.com/Shopify/sarama"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 )

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"context"
 	"errors"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"io/ioutil"
 	"net/http"
 )
@@ -34,15 +34,15 @@ func (w *Teams) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	if err != nil {
 		return err
 	}
-	
+
 	var eventData map[string]interface{}
 	json.Unmarshal([]byte(event), &eventData)
-	output := fmt.Sprintf("Event: %s \nStatus: %s \nMetadata: %s", eventData["message"],  eventData["reason"], eventData["metadata"])
+	output := fmt.Sprintf("Event: %s \nStatus: %s \nMetadata: %s", eventData["message"], eventData["reason"], eventData["metadata"])
 
 	reqBody, err := json.Marshal(map[string]string{
 		"summary": "event",
-		"text": string([]byte(output)),
-	 })
+		"text":    string([]byte(output)),
+	})
 
 	req, err := http.NewRequest(http.MethodPost, w.cfg.Endpoint, bytes.NewReader(reqBody))
 	if err != nil {
