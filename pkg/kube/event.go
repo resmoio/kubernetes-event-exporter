@@ -10,6 +10,7 @@ import (
 
 type EnhancedEvent struct {
 	corev1.Event   `json:",inline"`
+	ClusterName    string                  `json:"clusterName"`
 	InvolvedObject EnhancedObjectReference `json:"involvedObject"`
 }
 

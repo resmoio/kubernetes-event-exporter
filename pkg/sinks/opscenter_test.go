@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

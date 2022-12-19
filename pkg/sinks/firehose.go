@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/firehose"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type FirehoseConfig struct {

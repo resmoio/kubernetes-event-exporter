@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eventbridge"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 	"time"
 )
