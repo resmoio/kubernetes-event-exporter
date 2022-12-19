@@ -31,12 +31,13 @@ func NewAnnotationCache(kubeconfig *rest.Config) *AnnotationCache {
 	}
 }
 
-func (a *AnnotationCache) GetAnnotationsWithCache(reference *v1.ObjectReference) (map[string]string, error) {
-	uid := reference.UID
-
-	if val, ok := a.cache.Get(uid); ok {
+func (a *AnnotationCache) GetAnnotationsWithCache(cacheKey interface{}, reference *v1.ObjectReference) (map[string]string, error) {
+	cacheCheck.Inc()
+	if val, ok := a.cache.Get(cacheKey); ok {
+		cacheHit.Inc()
 		return val.(map[string]string), nil
 	}
+	cacheMiss.Inc()
 
 	obj, err := GetObject(reference, a.clientset, a.dynClient)
 	if err == nil {
@@ -46,16 +47,18 @@ func (a *AnnotationCache) GetAnnotationsWithCache(reference *v1.ObjectReference)
 				delete(annotations, key)
 			}
 		}
-		a.cache.Add(uid, annotations)
+		a.cache.Add(cacheKey, annotations)
 		return annotations, nil
 	}
 
 	if errors.IsNotFound(err) {
+		cacheError.Inc()
 		var empty map[string]string
-		a.cache.Add(uid, empty)
+		a.cache.Add(cacheKey, empty)
 		return nil, nil
 	}
 
 	return nil, err
 
 }
+
