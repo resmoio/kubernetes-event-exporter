@@ -54,7 +54,7 @@ func newResourceLock(config *rest.Config, leaderElectionID string) (resourcelock
 		return nil, err
 	}
 
-	return resourcelock.New(resourcelock.ConfigMapsResourceLock,
+	return resourcelock.New(resourcelock.ConfigMapsLeasesResourceLock,
 		leaderElectionNamespace,
 		leaderElectionID,
 		client.CoreV1(),

@@ -3,7 +3,7 @@ package sinks
 import (
 	"context"
 	"encoding/json"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"log/syslog"
 )
 

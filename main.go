@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/exporter"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/exporter"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
@@ -63,8 +63,8 @@ func main() {
 		log.Fatal().Str("log_format", cfg.LogFormat).Msg("Unknown log format")
 	}
 
-	if cfg.ThrottlePeriod == 0 {
-		cfg.ThrottlePeriod = 5
+	if err := cfg.Validate(); err != nil {
+		log.Fatal().Err(err).Msg("config validation failed")
 	}
 
 	kubeconfig, err := kube.GetKubernetesConfig(cfg.Kubeconfig)
@@ -84,7 +84,7 @@ func main() {
 			engine.OnEvent(event)
 		}
 	}
-	w := kube.NewEventWatcher(kubeconfig, cfg.Namespace, cfg.ThrottlePeriod, onEvent)
+	w := kube.NewEventWatcher(kubeconfig, cfg.Namespace, cfg.MaxEventAgeSeconds, onEvent)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	leaderLost := make(chan bool)

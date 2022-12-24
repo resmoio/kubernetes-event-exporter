@@ -7,7 +7,7 @@ import (
 	"fmt"
 	opensearch "github.com/opensearch-project/opensearch-go"
 	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
-	"github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"

@@ -1,6 +1,6 @@
 package exporter
 
-import "github.com/opsgenie/kubernetes-event-exporter/pkg/kube"
+import "github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 
 // Route allows using rules to drop events or match events to specific receivers.
 // It also allows using routes recursively for complex route building to fit

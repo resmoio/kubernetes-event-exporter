@@ -1,6 +1,6 @@
 logLevel: debug
 logFormat: json
-throttlePeriod: 10
+maxEventAgeSeconds: 10
 kubeQPS: 60
 kubeBurst: 60
 # If it's not set, will try to use the in-cluster config.
@@ -17,6 +17,8 @@ route:
     - drop:
         - namespace: "*test*"
         - type: "Normal"
+          minCount: 5
+          apiVersion: "*beta*"
       match:
         - receiver: "alert"
         - receiver: "pipe"
