@@ -33,7 +33,7 @@ func main() {
 		log.Fatal().Err(err).Msg("cannot read config file")
 	}
 
-	b = []byte(os.ExpandEnv(string(b)))
+	b = expandConfiguration(b)
 
 	var cfg exporter.Config
 	err = yaml.Unmarshal(b, &cfg)
@@ -143,4 +143,13 @@ func main() {
 		log.Warn().Msg("Leader election lost")
 		gracefulExit()
 	}
+}
+
+func expandConfiguration(cfg []byte) []byte {
+	return []byte(os.Expand(string(cfg), func(key string) string {
+		if key == "$" {
+			return "$"
+		}
+		return os.Getenv(key)
+	}))
 }
