@@ -3,8 +3,6 @@ logFormat: json
 maxEventAgeSeconds: 10
 kubeQPS: 60
 kubeBurst: 60
-# If it's not set, will try to use the in-cluster config.
-kubeconfig: /etc/kubernetes/kubeconfig
 # namespace: my-namespace-only # Omitting it defaults to all namespaces.
 route:
   # Main route

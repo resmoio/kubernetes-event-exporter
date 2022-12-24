@@ -5,7 +5,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"path/filepath"
 )
 
 // GetKubernetesClient returns the client if it's possible in cluster, otherwise tries to read HOME
@@ -31,6 +30,6 @@ func GetKubernetesConfig(kubeconfig string) (*rest.Config, error) {
 		return nil, err
 	}
 
-	// TODO: Read KUBECONFIG env variable as fallback
-	return clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
+	// Read KUBECONFIG env variable as fallback
+	return clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
 }
