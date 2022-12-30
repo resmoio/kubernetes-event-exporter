@@ -4,7 +4,7 @@ ADD . /app
 WORKDIR /app
 RUN CGO_ENABLED=0 GOOS=linux GO11MODULE=on go build -a -o /main .
 
-FROM ubuntu
+FROM ubuntu:20.04
 RUN apt-get update && apt-get install gettext-base curl ca-certificates -y --no-install-recommends \
     && \
     apt-get autoremove \
