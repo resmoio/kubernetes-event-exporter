@@ -24,6 +24,10 @@ resources:
   - https://github.com/resmoio/kubernetes-event-exporter?ref=master
 ```
 
+### Helm
+
+See [Helm Guide](./charts/kubernetes-event-exporter/README.md).
+
 ## Configuration
 
 Configuration is done via a YAML file, when run in Kubernetes, ConfigMap. The tool watches all the events and
