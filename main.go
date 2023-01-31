@@ -4,17 +4,14 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/exporter"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
@@ -74,7 +71,10 @@ func main() {
 	kubeconfig.QPS = cfg.KubeQPS
 	kubeconfig.Burst = cfg.KubeBurst
 
-	engine := exporter.NewEngine(&cfg, &exporter.ChannelBasedReceiverRegistry{})
+	metrics.Init(*addr)
+	metricsStore := metrics.NewMetricsStore(cfg.MetricsNamePrefix)
+
+	engine := exporter.NewEngine(&cfg, &exporter.ChannelBasedReceiverRegistry{MetricsStore: metricsStore})
 	onEvent := engine.OnEvent
 	if len(cfg.ClusterName) != 0 {
 		onEvent = func(event *kube.EnhancedEvent) {
@@ -84,7 +84,7 @@ func main() {
 			engine.OnEvent(event)
 		}
 	}
-	w := kube.NewEventWatcher(kubeconfig, cfg.Namespace, cfg.MaxEventAgeSeconds, onEvent)
+	w := kube.NewEventWatcher(kubeconfig, cfg.Namespace, cfg.MaxEventAgeSeconds, metricsStore, onEvent)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	leaderLost := make(chan bool)
@@ -106,22 +106,6 @@ func main() {
 	} else {
 		w.Start()
 	}
-
-	// Setup the prometheus metrics machinery
-	// Add Go module build info.
-	prometheus.MustRegister(collectors.NewBuildInfoCollector())
-
-	// Expose the registered metrics via HTTP.
-	http.Handle("/metrics", promhttp.HandlerFor(
-		prometheus.DefaultGatherer,
-		promhttp.HandlerOpts{
-			// Opt into OpenMetrics to support exemplars.
-			EnableOpenMetrics: true,
-		},
-	))
-
-	// start up the http listener to expose the metrics
-	go http.ListenAndServe(*addr, nil)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)

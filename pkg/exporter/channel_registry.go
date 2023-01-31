@@ -5,17 +5,9 @@ import (
 	"sync"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	sendErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "send_event_errors",
-		Help: "The total number of send event errors",
-	})
 )
 
 // ChannelBasedReceiverRegistry creates two channels for each receiver. One is for receiving events and other one is
@@ -27,6 +19,7 @@ type ChannelBasedReceiverRegistry struct {
 	ch     map[string]chan kube.EnhancedEvent
 	exitCh map[string]chan interface{}
 	wg     *sync.WaitGroup
+	MetricsStore *metrics.Store
 }
 
 func (r *ChannelBasedReceiverRegistry) SendEvent(name string, event *kube.EnhancedEvent) {
@@ -65,7 +58,7 @@ func (r *ChannelBasedReceiverRegistry) Register(name string, receiver sinks.Sink
 				log.Debug().Str("sink", name).Str("event", ev.Message).Msg("sending event to sink")
 				err := receiver.Send(context.Background(), &ev)
 				if err != nil {
-					sendErrors.Inc()
+					r.MetricsStore.SendErrors.Inc()
 					log.Debug().Err(err).Str("sink", name).Str("event", ev.Message).Msg("Cannot send event")
 				}
 			case <-exitCh:
