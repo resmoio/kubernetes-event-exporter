@@ -13,6 +13,17 @@ observability or alerting purposes. You won't believe what you are missing.
 Head on to `deploy/` folder and apply the YAMLs in the given filename order. Do not forget to modify the
 `deploy/01-config.yaml` file to your configuration needs. The additional information for configuration is as follows:
 
+### Kustomize
+
+Deploy with Kustomize by Git ref (i.e., commit sha, tag, or branch).
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/resmoio/kubernetes-event-exporter?ref=master
+```
+
 ## Configuration
 
 Configuration is done via a YAML file, when run in Kubernetes, ConfigMap. The tool watches all the events and
