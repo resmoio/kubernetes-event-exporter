@@ -1,6 +1,6 @@
 # kubernetes-event-exporter
 
-> **Note**: This is an active fork of [Opsgenie Kubernetes Event Exporter](https://github.com/opsgenie/kubernetes-event-exporter) 
+> **Note**: This is an active fork of [Opsgenie Kubernetes Event Exporter](https://github.com/opsgenie/kubernetes-event-exporter)
 since that is not maintained since November 2021. Development is sponsored by [Resmo](https://www.resmo.com).
 
 > This tool is presented at [KubeCon 2019 San Diego](https://kccncna19.sched.com/event/6aa61eca397e4ff2bdbb2845e5aebb81).
@@ -54,14 +54,14 @@ receivers:
 
 ## Troubleshoot "Events Discarded" warning:
 
-- If there are `client-side throttling` warnings in the event-exporter log:  
-  Adjust the following values in configuration:  
+- If there are `client-side throttling` warnings in the event-exporter log:
+  Adjust the following values in configuration:
     ```
     kubeQPS: 100
     kubeBurst: 500
     ```
-  > `Burst` to roughly match your events per minute  
-  > `QPS`   to be 1/5 of the burst  
+  > `Burst` to roughly match your events per minute
+  > `QPS`   to be 1/5 of the burst
 - If there is no request throttling, but events are still dropped:
   Consider increasing events cut off age
     ```
@@ -141,7 +141,7 @@ receivers:
       tls: # optional, advanced options for tls
         insecureSkipVerify: true|false # optional, if set to true, the tls cert won't be verified
         serverName: # optional, the domain, the certificate was issued for, in case it doesn't match the hostname used for the connection
-        caFile: # optional, path to the CA file of the trusted authority the cert was signed with 
+        caFile: # optional, path to the CA file of the trusted authority the cert was signed with
 ```
 ### OpenSearch
 
@@ -172,7 +172,7 @@ receivers:
       tls: # optional, advanced options for tls
         insecureSkipVerify: true|false # optional, if set to true, the tls cert won't be verified
         serverName: # optional, the domain, the certificate was issued for, in case it doesn't match the hostname used for the connection
-        caFile: # optional, path to the CA file of the trusted authority the cert was signed with 
+        caFile: # optional, path to the CA file of the trusted authority the cert was signed with
 ```
 
 ### Slack
@@ -287,7 +287,8 @@ route:
         - receiver: "dump"
 receivers:
   - name: "dump"
-    stdout: { }
+    stdout:
+      deDot: true|false
 ```
 
 ### Kafka
@@ -459,6 +460,7 @@ receivers:
   - name: "my_pipe"
     pipe:
       path: "/dev/stdout"
+      deDot: true|false
 ```
 
 # AWS EventBridge
