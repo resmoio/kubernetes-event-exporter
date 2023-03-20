@@ -20,6 +20,7 @@ var (
 	conf       = flag.String("conf", "config.yaml", "The config path file")
 	addr       = flag.String("metrics-address", ":2112", "The address to listen on for HTTP requests.")
 	kubeconfig = flag.String("kubeconfig", "", "Path to the kubeconfig file to use.")
+	tlsConf    = flag.String("metrics-tls-config", "", "The TLS config file for your metrics.")
 )
 
 func main() {
@@ -72,7 +73,7 @@ func main() {
 	kubecfg.QPS = cfg.KubeQPS
 	kubecfg.Burst = cfg.KubeBurst
 
-	metrics.Init(*addr)
+	metrics.Init(*addr, *tlsConf)
 	metricsStore := metrics.NewMetricsStore(cfg.MetricsNamePrefix)
 
 	engine := exporter.NewEngine(&cfg, &exporter.ChannelBasedReceiverRegistry{MetricsStore: metricsStore})

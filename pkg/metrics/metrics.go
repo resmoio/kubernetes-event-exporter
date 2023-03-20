@@ -3,37 +3,66 @@ package metrics
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/common/version"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/exporter-toolkit/web"
+	"github.com/rs/zerolog/log"
 )
-
 
 type Store struct {
 	EventsProcessed prometheus.Counter
 	EventsDiscarded prometheus.Counter
 	WatchErrors     prometheus.Counter
-	SendErrors	    prometheus.Counter
+	SendErrors      prometheus.Counter
 }
 
-func Init(addr string) {
+// promLogger implements promhttp.Logger
+type promLogger struct{}
+
+func (pl promLogger) Println(v ...interface{}) {
+	log.Logger.Error().Msg(fmt.Sprint(v...))
+}
+
+// promLogger implements the Logger interface
+func (pl promLogger) Log(v ...interface{}) error {
+	log.Logger.Info().Msg(fmt.Sprint(v...))
+	return nil
+}
+
+func Init(addr string, tlsConf string) {
 	// Setup the prometheus metrics machinery
 	// Add Go module build info.
 	prometheus.MustRegister(collectors.NewBuildInfoCollector())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
-             <head><title>Kubernetes Events Exporter</title></head>
-             <body>
-             <h1>Kubernetes Events Exporter</h1>
-             <p><a href='metrics'>Metrics</a></p>
-			 <h2>Build</h2>
-             <pre>` + version.Info() + ` ` + version.BuildContext() + `</pre>
-             </body>
-             </html>`))
-	})
+
+	promLogger := promLogger{}
+	metricsPath := "/metrics"
+
+	// Expose the registered metrics via HTTP.
+	http.Handle(metricsPath, promhttp.HandlerFor(
+		prometheus.DefaultGatherer,
+		promhttp.HandlerOpts{
+			// Opt into OpenMetrics to support exemplars.
+			EnableOpenMetrics: true,
+		},
+	))
+
+	landingConfig := web.LandingConfig{
+		Name:        "kubernetes-event-exporter",
+		Description: "Export Kubernetes Events to multiple destinations with routing and filtering",
+		Links: []web.LandingLinks{
+			{
+				Address: metricsPath,
+				Text:    "Metrics",
+			},
+		},
+	}
+	landingPage, _ := web.NewLandingPage(landingConfig)
+	http.Handle("/", landingPage)
+
 	http.HandleFunc("/-/healthy", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK")
@@ -42,17 +71,18 @@ func Init(addr string) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK")
 	})
-	// Expose the registered metrics via HTTP.
-	http.Handle("/metrics", promhttp.HandlerFor(
-		prometheus.DefaultGatherer,
-		promhttp.HandlerOpts{
-			// Opt into OpenMetrics to support exemplars.
-			EnableOpenMetrics: true,
-		},
-	))
+
+	metricsServer := http.Server{
+		ReadHeaderTimeout: 5 * time.Second}
+
+	metricsFlags := web.FlagConfig{
+		WebListenAddresses: &[]string{addr},
+		WebSystemdSocket:   new(bool),
+		WebConfigFile:      &tlsConf,
+	}
 
 	// start up the http listener to expose the metrics
-	go http.ListenAndServe(addr, nil)
+	go web.ListenAndServe(&metricsServer, &metricsFlags, promLogger)
 }
 
 func NewMetricsStore(name_prefix string) *Store {
@@ -62,7 +92,7 @@ func NewMetricsStore(name_prefix string) *Store {
 			Help: "The total number of events processed",
 		}),
 		EventsDiscarded: promauto.NewCounter(prometheus.CounterOpts{
-			Name: name_prefix  + "events_discarded",
+			Name: name_prefix + "events_discarded",
 			Help: "The total number of events discarded because of being older than the maxEventAgeSeconds specified",
 		}),
 		WatchErrors: promauto.NewCounter(prometheus.CounterOpts{
