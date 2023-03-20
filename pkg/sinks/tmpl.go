@@ -3,7 +3,7 @@ package sinks
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"text/template"
 )
