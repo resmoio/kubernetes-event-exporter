@@ -1,0 +1,15 @@
+{{- if .Values.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+    name: {{ include "kubernetes-event-exporter.fullname" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubernetes-event-exporter.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    namespace: {{ include "kubernetes-event-exporter.namespace" . }}
+    name: {{ include "kubernetes-event-exporter.fullname" . }}
+{{- end }}

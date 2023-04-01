@@ -11,6 +11,8 @@ import (
 
 type PipeConfig struct {
 	Path   string                 `yaml:"path"`
+	// DeDot all labels and annotations in the event. For both the event and the involvedObject
+	DeDot       bool              `yaml:"deDot"`
 	Layout map[string]interface{} `yaml:"layout"`
 }
 
@@ -21,7 +23,7 @@ func (f *PipeConfig) Validate() error {
 type Pipe struct {
 	writer  io.WriteCloser
 	encoder *json.Encoder
-	layout  map[string]interface{}
+	cfg     *PipeConfig
 }
 
 func NewPipeSink(config *PipeConfig) (*Pipe, error) {
@@ -33,7 +35,7 @@ func NewPipeSink(config *PipeConfig) (*Pipe, error) {
 	return &Pipe{
 		writer:  f,
 		encoder: json.NewEncoder(f),
-		layout:  config.Layout,
+		cfg:     config,
 	}, nil
 }
 
@@ -42,11 +44,16 @@ func (f *Pipe) Close() {
 }
 
 func (f *Pipe) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
-	if f.layout == nil {
+	if f.cfg.DeDot {
+		de := ev.DeDot()
+		ev = &de
+	}
+
+	if f.cfg.Layout == nil {
 		return f.encoder.Encode(ev)
 	}
 
-	res, err := convertLayoutTemplate(f.layout, ev)
+	res, err := convertLayoutTemplate(f.cfg.Layout, ev)
 	if err != nil {
 		return err
 	}

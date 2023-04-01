@@ -3,8 +3,7 @@ package kube
 import (
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
@@ -13,22 +12,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-var (
-	eventsProcessed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "events_sent",
-		Help: "The total number of events sent",
-	})
-	eventsDiscarded = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "events_discarded",
-		Help: "The total number of events discarded because of being older than the maxEventAgeSeconds specified",
-	})
-	watchErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "watch_errors",
-		Help: "The total number of errors received from the informer",
-	})
-
-	startUpTime = time.Now()
-)
+var startUpTime = time.Now()
 
 type EventHandler func(event *EnhancedEvent)
 
@@ -39,9 +23,10 @@ type EventWatcher struct {
 	annotationCache    *AnnotationCache
 	fn                 EventHandler
 	maxEventAgeSeconds time.Duration
+	metricsStore       *metrics.Store
 }
 
-func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, fn EventHandler) *EventWatcher {
+func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	informer := factory.Core().V1().Events().Informer()
@@ -53,11 +38,12 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		annotationCache:    NewAnnotationCache(config),
 		fn:                 fn,
 		maxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
+		metricsStore:       metricsStore,
 	}
 
 	informer.AddEventHandler(watcher)
 	informer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
-		watchErrors.Inc()
+		watcher.metricsStore.WatchErrors.Inc()
 	})
 
 	return watcher
@@ -88,7 +74,7 @@ func (e *EventWatcher) isEventDiscarded(event *corev1.Event) bool {
 				Str("event namespace", event.Namespace).
 				Str("event name", event.Name).
 				Msg("Event discarded as being older then maxEventAgeSeconds")
-			eventsDiscarded.Inc()
+			e.metricsStore.EventsDiscarded.Inc()
 		}
 		return true
 	}
@@ -107,7 +93,7 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		Str("involvedObject", event.InvolvedObject.Name).
 		Msg("Received event")
 
-	eventsProcessed.Inc()
+	e.metricsStore.EventsProcessed.Inc()
 
 	ev := &EnhancedEvent{
 		Event: *event.DeepCopy(),
@@ -155,16 +141,17 @@ func (e *EventWatcher) Stop() {
 	close(e.stopper)
 }
 
-func NewMockEventWatcher(MaxEventAgeSeconds int64) *EventWatcher {
+func NewMockEventWatcher(MaxEventAgeSeconds int64, metricsStore *metrics.Store) *EventWatcher {
 	watcher := &EventWatcher{
 		labelCache:         NewMockLabelCache(),
 		annotationCache:    NewMockAnnotationCache(),
 		maxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
 		fn:                 func(event *EnhancedEvent) {},
+		metricsStore:       metricsStore,
 	}
 	return watcher
 }
 
-func (e *EventWatcher) SetStartUpTime(time time.Time) {
+func (e *EventWatcher) setStartUpTime(time time.Time) {
 	startUpTime = time
 }

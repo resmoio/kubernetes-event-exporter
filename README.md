@@ -1,6 +1,6 @@
 # kubernetes-event-exporter
 
-> **Note**: This is an active fork of [Opsgenie Kubernetes Event Exporter](https://github.com/opsgenie/kubernetes-event-exporter) 
+> **Note**: This is an active fork of [Opsgenie Kubernetes Event Exporter](https://github.com/opsgenie/kubernetes-event-exporter)
 since that is not maintained since November 2021. Development is sponsored by [Resmo](https://www.resmo.com).
 
 > This tool is presented at [KubeCon 2019 San Diego](https://kccncna19.sched.com/event/6aa61eca397e4ff2bdbb2845e5aebb81).
@@ -12,6 +12,21 @@ observability or alerting purposes. You won't believe what you are missing.
 
 Head on to `deploy/` folder and apply the YAMLs in the given filename order. Do not forget to modify the
 `deploy/01-config.yaml` file to your configuration needs. The additional information for configuration is as follows:
+
+### Kustomize
+
+Deploy with Kustomize by Git ref (i.e., commit sha, tag, or branch).
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/resmoio/kubernetes-event-exporter?ref=master
+```
+
+### Helm
+
+See [Helm Guide](./charts/kubernetes-event-exporter/README.md).
 
 ## Configuration
 
@@ -54,14 +69,14 @@ receivers:
 
 ## Troubleshoot "Events Discarded" warning:
 
-- If there are `client-side throttling` warnings in the event-exporter log:  
-  Adjust the following values in configuration:  
+- If there are `client-side throttling` warnings in the event-exporter log:
+  Adjust the following values in configuration:
     ```
     kubeQPS: 100
     kubeBurst: 500
     ```
-  > `Burst` to roughly match your events per minute  
-  > `QPS`   to be 1/5 of the burst  
+  > `Burst` to roughly match your events per minute
+  > `QPS`   to be 1/5 of the burst
 - If there is no request throttling, but events are still dropped:
   Consider increasing events cut off age
     ```
@@ -141,7 +156,7 @@ receivers:
       tls: # optional, advanced options for tls
         insecureSkipVerify: true|false # optional, if set to true, the tls cert won't be verified
         serverName: # optional, the domain, the certificate was issued for, in case it doesn't match the hostname used for the connection
-        caFile: # optional, path to the CA file of the trusted authority the cert was signed with 
+        caFile: # optional, path to the CA file of the trusted authority the cert was signed with
 ```
 ### OpenSearch
 
@@ -172,7 +187,7 @@ receivers:
       tls: # optional, advanced options for tls
         insecureSkipVerify: true|false # optional, if set to true, the tls cert won't be verified
         serverName: # optional, the domain, the certificate was issued for, in case it doesn't match the hostname used for the connection
-        caFile: # optional, path to the CA file of the trusted authority the cert was signed with 
+        caFile: # optional, path to the CA file of the trusted authority the cert was signed with
 ```
 
 ### Slack
@@ -287,7 +302,8 @@ route:
         - receiver: "dump"
 receivers:
   - name: "dump"
-    stdout: { }
+    stdout:
+      deDot: true|false
 ```
 
 ### Kafka
@@ -459,6 +475,7 @@ receivers:
   - name: "my_pipe"
     pipe:
       path: "/dev/stdout"
+      deDot: true|false
 ```
 
 # AWS EventBridge

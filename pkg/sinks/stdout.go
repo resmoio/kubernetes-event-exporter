@@ -11,6 +11,8 @@ import (
 )
 
 type StdoutConfig struct {
+	// DeDot all labels and annotations in the event. For both the event and the involvedObject
+	DeDot       bool              `yaml:"deDot"`
 	Layout map[string]interface{} `yaml:"layout"`
 }
 
@@ -21,7 +23,7 @@ func (f *StdoutConfig) Validate() error {
 type Stdout struct {
 	writer  io.Writer
 	encoder *json.Encoder
-	layout  map[string]interface{}
+	cfg     *StdoutConfig
 }
 
 func NewStdoutSink(config *StdoutConfig) (*Stdout, error) {
@@ -31,7 +33,7 @@ func NewStdoutSink(config *StdoutConfig) (*Stdout, error) {
 	return &Stdout{
 		writer:  writer,
 		encoder: json.NewEncoder(writer),
-		layout:  config.Layout,
+		cfg:     config,
 	}, nil
 }
 
@@ -40,11 +42,16 @@ func (f *Stdout) Close() {
 }
 
 func (f *Stdout) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
-	if f.layout == nil {
+	if f.cfg.DeDot {
+		de := ev.DeDot()
+		ev = &de
+	}
+
+	if f.cfg.Layout == nil {
 		return f.encoder.Encode(ev)
 	}
 
-	res, err := convertLayoutTemplate(f.layout, ev)
+	res, err := convertLayoutTemplate(f.cfg.Layout, ev)
 	if err != nil {
 		return err
 	}

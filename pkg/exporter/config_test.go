@@ -92,3 +92,60 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsAndThrottle
 	assert.Error(t, err)
 	assert.Contains(t, output.String(), "cannot set both throttlePeriod (depricated) and MaxEventAgeSeconds")
 }
+
+func TestValidate_MetricsNamePrefix_WhenEmpty(t *testing.T) {
+	output := &bytes.Buffer{}
+	log.Logger = log.Logger.Output(output)
+
+	config := Config{}
+	err := config.Validate()
+	assert.NoError(t, err)
+	assert.Equal(t, "", config.MetricsNamePrefix)
+	assert.Contains(t, output.String(), "metrics name prefix is empty, setting config.metricsNamePrefix='event_exporter_' is recommended")
+}
+
+func TestValidate_MetricsNamePrefix_WhenValid(t *testing.T) {
+	output := &bytes.Buffer{}
+	log.Logger = log.Logger.Output(output)
+
+	validCases := []string{
+		"kubernetes_event_exporter_",
+		"test_",
+		"test_test_",
+		"test::test_test_",
+		"TEST::test_test_",
+		"test_test::1234_test_",
+	}
+
+	for _, testPrefix := range validCases {
+		config := Config{
+			MetricsNamePrefix: testPrefix,
+		}
+		err := config.Validate()
+		assert.NoError(t, err)
+		assert.Equal(t, testPrefix, config.MetricsNamePrefix)
+		assert.Contains(t, output.String(), "config.metricsNamePrefix='" + testPrefix + "'")
+	}
+}
+
+func TestValidate_MetricsNamePrefix_WhenInvalid(t *testing.T) {
+	output := &bytes.Buffer{}
+	log.Logger = log.Logger.Output(output)
+
+	invalidCases := []string{
+		"no_tracing_underscore",
+		"__reserved_",
+		"::wrong_",
+		"13245_test_",
+	}
+
+	for _, testPrefix := range invalidCases {
+		config := Config{
+			MetricsNamePrefix: testPrefix,
+		}
+		err := config.Validate()
+		assert.Error(t, err)
+		assert.Equal(t, testPrefix, config.MetricsNamePrefix)
+		assert.Contains(t, output.String(), "config.metricsNamePrefix should match the regex: ^[a-zA-Z][a-zA-Z0-9_:]*_$")
+	}
+}

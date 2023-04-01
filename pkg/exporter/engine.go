@@ -1,9 +1,10 @@
 package exporter
 
 import (
+	"reflect"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
-	"reflect"
 )
 
 // Engine is responsible for initializing the receivers from sinks
