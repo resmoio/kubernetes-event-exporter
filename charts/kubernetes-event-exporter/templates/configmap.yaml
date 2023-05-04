@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "kubernetes-event-exporter.fullname" . }}-cfg
   namespace: {{ template "kubernetes-event-exporter.namespace" . }}
+  labels:
+    {{- include "kubernetes-event-exporter.labels" . | nindent 4 }}
 data:
   config.yaml: |
 {{ .Values.config | indent 4 }}

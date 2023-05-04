@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: {{ include "kubernetes-event-exporter.fullname" . }}
   namespace: {{ include "kubernetes-event-exporter.namespace" . }}
+  labels:
+    {{- include "kubernetes-event-exporter.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
