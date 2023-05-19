@@ -5,10 +5,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"os"
+
 	"github.com/Shopify/sarama"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
-	"io/ioutil"
 )
 
 // KafkaConfig is the Kafka producer configuration
@@ -139,7 +140,7 @@ func createSaramaProducer(cfg *KafkaConfig) (sarama.SyncProducer, error) {
 	// TLS Client auth override
 	if cfg.TLS.Enable {
 
-		caCert, err := ioutil.ReadFile(cfg.TLS.CaFile)
+		caCert, err := os.ReadFile(cfg.TLS.CaFile)
 		if err != nil {
 			return nil, err
 		}

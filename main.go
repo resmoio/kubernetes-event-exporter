@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,7 +23,7 @@ var (
 
 func main() {
 	flag.Parse()
-	b, err := ioutil.ReadFile(*conf)
+	b, err := os.ReadFile(*conf)
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot read config file")
