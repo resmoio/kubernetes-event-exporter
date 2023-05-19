@@ -1,8 +1,9 @@
 package exporter
 
 import (
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"regexp"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 // matchString is a method to clean the code. Error handling is omitted here because these
@@ -85,9 +86,7 @@ func (r *Rule) MatchesEvent(ev *kube.EnhancedEvent) bool {
 	}
 
 	// If minCount is not given via a config, it's already 0 and the count is already 1 and this passes.
-	if ev.Count >= r.MinCount {
-		return true
-	} else {
+	if ev.Count < r.MinCount {
 		return false
 	}
 
