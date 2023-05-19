@@ -12,7 +12,7 @@ import (
 
 type StdoutConfig struct {
 	// DeDot all labels and annotations in the event. For both the event and the involvedObject
-	DeDot       bool              `yaml:"deDot"`
+	DeDot  bool                   `yaml:"deDot"`
 	Layout map[string]interface{} `yaml:"layout"`
 }
 
@@ -38,7 +38,6 @@ func NewStdoutSink(config *StdoutConfig) (*Stdout, error) {
 }
 
 func (f *Stdout) Close() {
-	return
 }
 
 func (f *Stdout) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
