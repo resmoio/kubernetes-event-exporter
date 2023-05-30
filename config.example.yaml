@@ -12,20 +12,24 @@ route:
         - receiver: "dump"
     # This starts another route, drops all the events in *test* namespaces and Normal events
     # for capturing critical events
-    - drop:
+    - match:
+        - receiver: "alert"
+        - receiver: "pipe"
+      drop:
         - namespace: "*test*"
         - type: "Normal"
           minCount: 5
           apiVersion: "*beta*"
-      match:
-        - receiver: "alert"
-        - receiver: "pipe"
     # This a final route for user messages
     - match:
         - kind: "Pod|Deployment|ReplicaSet"
           labels:
             version: "dev"
           receiver: "slack"
+    - match:
+        - receiver: "firehose"
+      drop:
+        - type: "Normal"
 receivers:
   - name: "dump"
     elasticsearch:
@@ -112,3 +116,8 @@ receivers:
       network: "tcp"
       address: "127.0.0.1:11514"
       tag: "k8s.event"
+  - name: "firehose"
+    firehose:
+      deliveryStreamName: "kubernetes-events"
+      region: "us-east-1"
+      deDot: true
