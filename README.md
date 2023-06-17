@@ -327,15 +327,15 @@ receivers:
       sasl:
         enable: true
         username: "kube-event-producer"
-        passsord: "kube-event-producer-password"
+        password: "kube-event-producer-password"
       layout: #optionnal
-        kind: {{ .InvolvedObject.Kind }}
-        namespace: {{ .InvolvedObject.Namespace }}
-        name: {{ .InvolvedObject.Name }}
-        reason: {{ .Reason }}
-        message: {{ .Message }}
-        type: {{ .Type }}
-        createdAt: {{ .GetTimestampISO8601 }}
+        kind: "{{ .InvolvedObject.Kind }}"
+        namespace: "{{ .InvolvedObject.Namespace }}"
+        name: "{{ .InvolvedObject.Name }}"
+        reason: "{{ .Reason }}"
+        message: "{{ .Message }}"
+        type: "{{ .Type }}"
+        createdAt: "{{ .GetTimestampISO8601 }}"
 ```
 
 ### OpsCenter
