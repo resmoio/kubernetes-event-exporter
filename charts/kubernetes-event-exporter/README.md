@@ -30,12 +30,6 @@ See [App Configuration](../../README.md) for reference.
 
 ## Install Chart
 
-Ensure `monitoring` namespace exists
-
-```shell
-kubectl create ns monitoring
-```
-
 Install chart
 
 ```bash

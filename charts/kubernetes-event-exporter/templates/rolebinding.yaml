@@ -1,9 +1,11 @@
 {{- if .Values.rbac.create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: {{ .Values.rbac.namespaced | ternary "RoleBinding" "ClusterRoleBinding" }}
 metadata:
-    name: {{ include "kubernetes-event-exporter.fullname" . }}
+  name: {{ include "kubernetes-event-exporter.fullname" . }}
+  labels:
+    {{- include "kubernetes-event-exporter.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

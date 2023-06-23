@@ -1,3 +1,6 @@
+global:
+  imagePullSecrets: []
+
 # Default values for event-exporter.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
@@ -5,14 +8,18 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/resmoio/kubernetes-event-exporter
+  registry: ghcr.io
+  repository: resmoio/kubernetes-event-exporter
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+
+## Override the deployment namespace
+namespaceOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -23,21 +30,28 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations:
-  prometheus.io/scrape: 'true'
-  prometheus.io/port: '2112'
-  prometheus.io/path: '/metrics'
+deploymentAnnotations: { }
+deploymentLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podAnnotations: {}
+#  prometheus.io/scrape: 'true'
+#  prometheus.io/port: '2112'
+#  prometheus.io/path: '/metrics'
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsUser: 65530
+  runAsGroup: 65530
+  seccompProfile:
+    type: RuntimeDefault
 
 service:
   type: ClusterIP
@@ -59,12 +73,20 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-## Override the deployment namespace
-namespaceOverride: "monitoring"
+# -- Additional Volume mounts
+extraVolumeMounts: []
+
+# -- Additional Volumes
+extraVolumes: []
 
 rbac:
   # If true, create & use RBAC resources
   create: true
+  namespaced: false
+  rules:
+  - apiGroups: [ "*" ]
+    resources: [ "*" ]
+    verbs: [ "get", "watch", "list" ]
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -94,3 +116,48 @@ config: |
   receivers:
     - name: "dump"
       stdout: {}
+
+
+# Enable this if you're using https://github.com/coreos/prometheus-operator
+serviceMonitor:
+  enabled: false
+  # namespace: monitoring
+
+  # Fallback to the prometheus default unless specified
+  # interval: 10s
+
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  # scheme: ""
+
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  # tlsConfig: {}
+
+  # bearerTokenFile:
+  # Fallback to the prometheus default unless specified
+  # scrapeTimeout: 30s
+
+  ## Used to pass Labels that are used by the Prometheus installed in your cluster to select Service Monitors to work with
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+  additionalLabels: {}
+
+  # Retain the job and instance labels of the metrics pushed to the Pushgateway
+  # [Scraping Pushgateway](https://github.com/prometheus/pushgateway#configure-the-pushgateway-as-a-target-to-scrape)
+  honorLabels: true
+
+  ## Metric relabel configs to apply to samples before ingestion.
+  ## [Metric Relabeling](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs)
+  metricRelabelings: []
+  # - action: keep
+  #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+  #   sourceLabels: [__name__]
+
+  ## Relabel configs to apply to samples before ingestion.
+  ## [Relabeling](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config)
+  relabelings: []
+  # - sourceLabels: [__meta_kubernetes_pod_node_name]
+  #   separator: ;
+  #   regex: ^(.*)$
+  #   targetLabel: nodename
+  #   replacement: $1
+  #   action: replace
