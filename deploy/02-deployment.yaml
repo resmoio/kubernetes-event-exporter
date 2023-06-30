@@ -16,6 +16,10 @@ spec:
         prometheus.io/path: '/metrics'
     spec:
       serviceAccountName: event-exporter
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: event-exporter
           # The good practice would be to pin the version. This is just a reference so that we don't
@@ -27,6 +31,10 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: cfg
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
       volumes:
         - name: cfg
           configMap:
