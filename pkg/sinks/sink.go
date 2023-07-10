@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
@@ -41,7 +41,7 @@ func setupTLS(cfg *TLS) (*tls.Config, error) {
 	}
 
 	if len(cfg.CaFile) > 0 {
-		readFile, err := ioutil.ReadFile(cfg.CaFile)
+		readFile, err := os.ReadFile(cfg.CaFile)
 		if err != nil {
 			return nil, err
 		}

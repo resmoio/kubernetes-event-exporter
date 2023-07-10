@@ -5,15 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	opensearch "github.com/opensearch-project/opensearch-go"
-	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
+
+	opensearch "github.com/opensearch-project/opensearch-go"
+	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/rs/zerolog/log"
 )
 
 type OpenSearchConfig struct {
@@ -132,7 +133,7 @@ func (e *OpenSearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 
 	defer resp.Body.Close()
 	if resp.StatusCode > 399 {
-		rb, err := ioutil.ReadAll(resp.Body)
+		rb, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}

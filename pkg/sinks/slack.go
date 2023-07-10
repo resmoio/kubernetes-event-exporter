@@ -2,6 +2,7 @@ package sinks
 
 import (
 	"context"
+	"sort"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
@@ -58,20 +59,33 @@ func (s *SlackSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 			})
 		}
 
+		sort.SliceStable(fields, func(i, j int) bool {
+			return fields[i].Title < fields[j].Title
+		})
+
 		// make slack attachment
 		slackAttachment := slack.Attachment{}
 		slackAttachment.Fields = fields
 		if s.cfg.AuthorName != "" {
-			slackAttachment.AuthorName = s.cfg.AuthorName
+			slackAttachment.AuthorName, err = GetString(ev, s.cfg.AuthorName)
+			if err != nil {
+				return err
+			}
 		}
 		if s.cfg.Color != "" {
 			slackAttachment.Color = s.cfg.Color
 		}
 		if s.cfg.Title != "" {
-			slackAttachment.Title = s.cfg.Title
+			slackAttachment.Title, err = GetString(ev, s.cfg.Title)
+			if err != nil {
+				return err
+			}
 		}
 		if s.cfg.Footer != "" {
-			slackAttachment.Footer = s.cfg.Footer
+			slackAttachment.Footer, err = GetString(ev, s.cfg.Footer)
+			if err != nil {
+				return err
+			}
 		}
 
 		options = append(options, slack.MsgOptionAttachments(slackAttachment))

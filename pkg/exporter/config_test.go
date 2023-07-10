@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/goccy/go-yaml"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 )
 
 func readConfig(t *testing.T, yml string) Config {
@@ -43,7 +43,6 @@ receivers:
 	assert.Equal(t, "v33", cfg.Route.Routes[0].Drop[0].APIVersion)
 	assert.Equal(t, "stdout", cfg.Route.Routes[0].Match[0].Receiver)
 }
-
 
 func TestValidate_IsCheckingMaxEventAgeSeconds_WhenNotSet(t *testing.T) {
 	config := Config{}
@@ -124,7 +123,7 @@ func TestValidate_MetricsNamePrefix_WhenValid(t *testing.T) {
 		err := config.Validate()
 		assert.NoError(t, err)
 		assert.Equal(t, testPrefix, config.MetricsNamePrefix)
-		assert.Contains(t, output.String(), "config.metricsNamePrefix='" + testPrefix + "'")
+		assert.Contains(t, output.String(), "config.metricsNamePrefix='"+testPrefix+"'")
 	}
 }
 

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,9 +11,9 @@ import (
 	"github.com/resmoio/kubernetes-event-exporter/pkg/exporter"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/setup"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -24,21 +23,19 @@ var (
 
 func main() {
 	flag.Parse()
-	b, err := ioutil.ReadFile(*conf)
 
+	log.Info().Msg("Reading config file " + *conf)
+	configBytes, err := os.ReadFile(*conf)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot read config file")
 	}
 
-	b = []byte(os.ExpandEnv(string(b)))
+	configBytes = []byte(os.ExpandEnv(string(configBytes)))
 
-	var cfg exporter.Config
-	err = yaml.Unmarshal(b, &cfg)
+	cfg, err := setup.ParseConfigFromBites(configBytes)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot parse config to YAML")
+		log.Fatal().Msg(err.Error())
 	}
-
-	log.Logger = log.With().Caller().Logger().Level(zerolog.DebugLevel)
 
 	if cfg.LogLevel != "" {
 		level, err := zerolog.ParseLevel(cfg.LogLevel)
@@ -46,6 +43,9 @@ func main() {
 			log.Fatal().Err(err).Str("level", cfg.LogLevel).Msg("Invalid log level")
 		}
 		log.Logger = log.Logger.Level(level)
+	} else {
+		log.Info().Msg("Set default log level to info. Use config.logLevel=[debug | info | warn | error] to overwrite.")
+		log.Logger = log.With().Caller().Logger().Level(zerolog.InfoLevel)
 	}
 
 	if cfg.LogFormat == "json" {

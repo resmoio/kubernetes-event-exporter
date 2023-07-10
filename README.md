@@ -327,15 +327,15 @@ receivers:
       sasl:
         enable: true
         username: "kube-event-producer"
-        passsord: "kube-event-producer-password"
+        password: "kube-event-producer-password"
       layout: #optionnal
-        kind: {{ .InvolvedObject.Kind }}
-        namespace: {{ .InvolvedObject.Namespace }}
-        name: {{ .InvolvedObject.Name }}
-        reason: {{ .Reason }}
-        message: {{ .Message }}
-        type: {{ .Type }}
-        createdAt: {{ .GetTimestampISO8601 }}
+        kind: "{{ .InvolvedObject.Kind }}"
+        namespace: "{{ .InvolvedObject.Namespace }}"
+        name: "{{ .InvolvedObject.Name }}"
+        reason: "{{ .Reason }}"
+        message: "{{ .Message }}"
+        type: "{{ .Type }}"
+        createdAt: "{{ .GetTimestampISO8601 }}"
 ```
 
 ### OpsCenter
@@ -494,4 +494,15 @@ receivers:
        reason: "{{ .Reason }}"
        object: "{{ .Namespace }}"
 
+```
+
+# Loki
+
+```yaml
+receivers:
+  - name: "loki"
+    loki:
+      streamLabels:
+        foo: bar
+      url: http://127.0.0.1:3100/loki/api/v1/push
 ```

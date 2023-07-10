@@ -1,0 +1,14 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kubernetes-event-exporter.fullname" . }}
+  namespace: {{ include "kubernetes-event-exporter.namespace" . }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      protocol: TCP
+  selector:
+    {{- include "kubernetes-event-exporter.selectorLabels" . | indent 4 }}

@@ -3,15 +3,16 @@ package sinks
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/Masterminds/sprig"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"text/template"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/Masterminds/sprig/v3"
 )
 
 func GetString(event *kube.EnhancedEvent, text string) (string, error) {
 	tmpl, err := template.New("template").Funcs(sprig.TxtFuncMap()).Parse(text)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	buf := new(bytes.Buffer)

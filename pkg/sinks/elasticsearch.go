@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -137,7 +137,7 @@ func (e *Elasticsearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error 
 
 	defer resp.Body.Close()
 	if resp.StatusCode > 399 {
-		rb, err := ioutil.ReadAll(resp.Body)
+		rb, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}

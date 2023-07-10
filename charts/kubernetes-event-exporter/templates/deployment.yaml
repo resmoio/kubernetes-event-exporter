@@ -41,17 +41,17 @@ spec:
           image: "{{ .Values.global.imageRegistry | default .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: metrics
+            - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /metrics
-              port: metrics
+              path: /-/healthy
+              port: http
           readinessProbe:
             httpGet:
-              path: /metrics
-              port: metrics
+              path: /-/ready
+              port: http
           args:
             - -conf=/data/config.yaml
           volumeMounts:

@@ -4,7 +4,7 @@
 
 ```shell
 helm repo add kubernetes-event-exporter https://resmoio.github.io/kubernetes-event-exporter
-helm update
+helm repo update
 ```
 
 ## Prepare the Deployment configuration [Optional]

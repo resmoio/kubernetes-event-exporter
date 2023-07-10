@@ -5,12 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-
-	"github.com/rs/zerolog/log"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/rs/zerolog/log"
 )
 
 type WebhookConfig struct {
@@ -32,7 +31,7 @@ func NewWebhook(cfg *WebhookConfig) (Sink, error) {
 }
 
 type Webhook struct {
-	cfg      *WebhookConfig
+	cfg       *WebhookConfig
 	transport *http.Transport
 }
 
@@ -71,7 +70,7 @@ func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

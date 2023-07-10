@@ -2,13 +2,14 @@ package sinks
 
 import (
 	"bytes"
-	"fmt"
-	"encoding/json"
 	"context"
-	"errors"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"io/ioutil"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type TeamsConfig struct {
@@ -43,6 +44,9 @@ func (w *Teams) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 		"summary": "event",
 		"text":    string([]byte(output)),
 	})
+	if err != nil {
+		return err
+	}
 
 	req, err := http.NewRequest(http.MethodPost, w.cfg.Endpoint, bytes.NewReader(reqBody))
 	if err != nil {
@@ -59,11 +63,19 @@ func (w *Teams) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	message := string(body)
 
-	// TODO: make this prettier please
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("not 200: " + string(body))
+		return fmt.Errorf("not 200: %s", message)
+	}
+	// see: https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/connectors-using?tabs=cURL#rate-limiting-for-connectors
+	if strings.Contains(message, "Microsoft Teams endpoint returned HTTP error 429") {
+		return fmt.Errorf("rate limited: %s", message)
 	}
 
 	return nil

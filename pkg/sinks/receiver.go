@@ -15,6 +15,7 @@ type ReceiverConfig struct {
 	Firehose      *FirehoseConfig      `yaml:"firehose"`
 	OpenSearch    *OpenSearchConfig    `yaml:"opensearch"`
 	Opsgenie      *OpsgenieConfig      `yaml:"opsgenie"`
+	Loki          *LokiConfig          `yaml:"loki"`
 	SQS           *SQSConfig           `yaml:"sqs"`
 	SNS           *SNSConfig           `yaml:"sns"`
 	Slack         *SlackConfig         `yaml:"slack"`
@@ -115,6 +116,10 @@ func (r *ReceiverConfig) GetSink() (Sink, error) {
 
 	if r.EventBridge != nil {
 		return NewEventBridgeSink(r.EventBridge)
+	}
+
+	if r.Loki != nil {
+		return NewLoki(r.Loki)
 	}
 
 	return nil, errors.New("unknown sink")
