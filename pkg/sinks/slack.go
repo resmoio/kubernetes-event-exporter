@@ -73,7 +73,10 @@ func (s *SlackSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 			}
 		}
 		if s.cfg.Color != "" {
-			slackAttachment.Color = s.cfg.Color
+			slackAttachment.Color, err = GetString(ev, s.cfg.Color)
+			if err != nil {
+				return err
+			}
 		}
 		if s.cfg.Title != "" {
 			slackAttachment.Title, err = GetString(ev, s.cfg.Title)
