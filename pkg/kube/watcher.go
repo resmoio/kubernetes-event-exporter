@@ -20,13 +20,14 @@ type EventWatcher struct {
 	informer           cache.SharedInformer
 	stopper            chan struct{}
 	labelCache         *LabelCache
+	omitLookup         bool
 	annotationCache    *AnnotationCache
 	fn                 EventHandler
 	maxEventAgeSeconds time.Duration
 	metricsStore       *metrics.Store
 }
 
-func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler) *EventWatcher {
+func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler, omitLookup bool) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	informer := factory.Core().V1().Events().Informer()
@@ -35,6 +36,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		informer:           informer,
 		stopper:            make(chan struct{}),
 		labelCache:         NewLabelCache(config),
+		omitLookup:         omitLookup,
 		annotationCache:    NewAnnotationCache(config),
 		fn:                 fn,
 		maxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
@@ -100,29 +102,33 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	}
 	ev.Event.ManagedFields = nil
 
-	labels, err := e.labelCache.GetLabelsWithCache(&event.InvolvedObject)
-	if err != nil {
-		if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
-			log.Error().Err(err).Msg("Cannot list labels of the object")
-		} else {
-			log.Debug().Err(err).Msg("Cannot list labels of the object (CRD)")
-		}
-		// Ignoring error, but log it anyways
-	} else {
-		ev.InvolvedObject.Labels = labels
+	if e.omitLookup {
 		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
-	}
+	} else {
+		labels, err := e.labelCache.GetLabelsWithCache(&event.InvolvedObject)
+		if err != nil {
+			if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
+				log.Error().Err(err).Msg("Cannot list labels of the object")
+			} else {
+				log.Debug().Err(err).Msg("Cannot list labels of the object (CRD)")
+			}
+			// Ignoring error, but log it anyways
+		} else {
+			ev.InvolvedObject.Labels = labels
+			ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
+		}
 
-	annotations, err := e.annotationCache.GetAnnotationsWithCache(&event.InvolvedObject)
-	if err != nil {
-		if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
-			log.Error().Err(err).Msg("Cannot list annotations of the object")
+		annotations, err := e.annotationCache.GetAnnotationsWithCache(&event.InvolvedObject)
+		if err != nil {
+			if ev.InvolvedObject.Kind != "CustomResourceDefinition" {
+				log.Error().Err(err).Msg("Cannot list annotations of the object")
+			} else {
+				log.Debug().Err(err).Msg("Cannot list annotations of the object (CRD)")
+			}
 		} else {
-			log.Debug().Err(err).Msg("Cannot list annotations of the object (CRD)")
+			ev.InvolvedObject.Annotations = annotations
+			ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
 		}
-	} else {
-		ev.InvolvedObject.Annotations = annotations
-		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
 	}
 
 	e.fn(ev)

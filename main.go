@@ -87,7 +87,7 @@ func main() {
 		}
 	}
 
-	w := kube.NewEventWatcher(kubecfg, cfg.Namespace, cfg.MaxEventAgeSeconds, metricsStore, onEvent)
+	w := kube.NewEventWatcher(kubecfg, cfg.Namespace, cfg.MaxEventAgeSeconds, metricsStore, onEvent, cfg.OmitLookup)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	leaderLost := make(chan bool)

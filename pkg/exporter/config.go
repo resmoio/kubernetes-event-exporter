@@ -26,7 +26,8 @@ type Config struct {
 	Receivers          []sinks.ReceiverConfig    `yaml:"receivers"`
 	KubeQPS            float32                   `yaml:"kubeQPS,omitempty"`
 	KubeBurst          int                       `yaml:"kubeBurst,omitempty"`
-	MetricsNamePrefix  string					 `yaml:"metricsNamePrefix,omitempty"`
+	MetricsNamePrefix  string                    `yaml:"metricsNamePrefix,omitempty"`
+	OmitLookup         bool                      `yaml:"omitLookup,omitempty"`
 }
 
 func (c *Config) Validate() error {
