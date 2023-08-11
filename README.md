@@ -334,7 +334,7 @@ receivers:
         enable: true
         username: "kube-event-producer"
         password: "kube-event-producer-password"
-      layout: #optionnal
+      layout: #optional
         kind: "{{ .InvolvedObject.Kind }}"
         namespace: "{{ .InvolvedObject.Namespace }}"
         name: "{{ .InvolvedObject.Name }}"
