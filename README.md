@@ -17,6 +17,12 @@ Head on to `deploy/` folder and apply the YAMLs in the given filename order. Do 
 
 Deploy with Kustomize by Git ref (i.e., commit sha, tag, or branch).
 
+Create namespace before deployment:
+
+```console
+kubectl create namespace monitoring
+```
+
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
