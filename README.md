@@ -89,6 +89,17 @@ to keep the config file clean of secrets.
     maxEventAgeSeconds: 60
     ```
 
+## Ignore event update
+if an event occur many times, It will only update the event fields like ```count``` and ```lastTimestamp```.
+By default ```kubernetes-event-exporter``` will ignore the eventUpdate and will not sent to the recivers.
+If you Don't want to miss every event,you can use trigger ```processUpdateEvent``` to controll whether sent the event to the recivers.
+```azure
+processUpdateEvent true|false  (default false)
+
+true: sent every matching event to the recivers including when the event updated 
+false: ignore the event updted
+```
+
 ### Opsgenie
 
 [Opsgenie](https://www.opsgenie.com) is an alerting and on-call management tool. kubernetes-event-exporter can push to

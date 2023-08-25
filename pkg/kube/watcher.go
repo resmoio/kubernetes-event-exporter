@@ -25,9 +25,10 @@ type EventWatcher struct {
 	fn                 EventHandler
 	maxEventAgeSeconds time.Duration
 	metricsStore       *metrics.Store
+	ProcessUpdateEvent bool
 }
 
-func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler, omitLookup bool) *EventWatcher {
+func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, ProcessUpdateEvent bool, metricsStore *metrics.Store, fn EventHandler, omitLookup bool) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	informer := factory.Core().V1().Events().Informer()
@@ -41,6 +42,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		fn:                 fn,
 		maxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
 		metricsStore:       metricsStore,
+		ProcessUpdateEvent: ProcessUpdateEvent,
 	}
 
 	informer.AddEventHandler(watcher)
@@ -57,7 +59,11 @@ func (e *EventWatcher) OnAdd(obj interface{}) {
 }
 
 func (e *EventWatcher) OnUpdate(oldObj, newObj interface{}) {
-	// Ignore updates
+	if e.ProcessUpdateEvent {
+		event := newObj.(*corev1.Event)
+		e.onEvent(event)
+	}
+
 }
 
 // Ignore events older than the maxEventAgeSeconds

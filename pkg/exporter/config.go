@@ -28,6 +28,7 @@ type Config struct {
 	KubeBurst          int                       `yaml:"kubeBurst,omitempty"`
 	MetricsNamePrefix  string                    `yaml:"metricsNamePrefix,omitempty"`
 	OmitLookup         bool                      `yaml:"omitLookup,omitempty"`
+	ProcessUpdateEvent bool                      `yaml:"processUpdateEvent,omitempty"`
 }
 
 func (c *Config) Validate() error {
