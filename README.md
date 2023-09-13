@@ -158,6 +158,7 @@ receivers:
       password: # optional
       cloudID: # optional
       apiKey: # optional
+      headers: # optional，Can be used to append the additional key/value pairs into the request headers
       # If set to true, it allows updating the same document in ES (might be useful handling count)
       useEventID: true|false
       # Type should be only used for clusters Version 6 and lower.

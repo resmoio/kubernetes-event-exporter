@@ -19,11 +19,12 @@ import (
 
 type ElasticsearchConfig struct {
 	// Connection specific
-	Hosts    []string `yaml:"hosts"`
-	Username string   `yaml:"username"`
-	Password string   `yaml:"password"`
-	CloudID  string   `yaml:"cloudID"`
-	APIKey   string   `yaml:"apiKey"`
+	Hosts    []string          `yaml:"hosts"`
+	Username string            `yaml:"username"`
+	Password string            `yaml:"password"`
+	CloudID  string            `yaml:"cloudID"`
+	APIKey   string            `yaml:"apiKey"`
+	Headers  map[string]string `yaml:"headers"` // Can be used to append additional key value pairs into the request headers
 	// Indexing preferences
 	UseEventID bool `yaml:"useEventID"`
 	// DeDot all labels and annotations in the event. For both the event and the involvedObject
@@ -42,10 +43,18 @@ func NewElasticsearch(cfg *ElasticsearchConfig) (*Elasticsearch, error) {
 		return nil, fmt.Errorf("failed to setup TLS: %w", err)
 	}
 
+	var header = http.Header{}
+	if len(cfg.Headers) > 0 {
+		for k, v := range cfg.Headers {
+			header.Add(k, v)
+		}
+	}
+
 	client, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: cfg.Hosts,
 		Username:  cfg.Username,
 		Password:  cfg.Password,
+		Header:    header,
 		CloudID:   cfg.CloudID,
 		APIKey:    cfg.APIKey,
 		Transport: &http.Transport{
