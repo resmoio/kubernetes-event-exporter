@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/exporter-toolkit/web"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/version"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,6 +19,7 @@ type Store struct {
 	EventsDiscarded prometheus.Counter
 	WatchErrors     prometheus.Counter
 	SendErrors      prometheus.Counter
+	BuildInfo       prometheus.GaugeFunc
 }
 
 // promLogger implements promhttp.Logger
@@ -87,6 +89,20 @@ func Init(addr string, tlsConf string) {
 
 func NewMetricsStore(name_prefix string) *Store {
 	return &Store{
+		BuildInfo: promauto.NewGaugeFunc(
+			prometheus.GaugeOpts{
+				Name: name_prefix + "build_info",
+				Help: "A metric with a constant '1' value labeled by version, revision, branch, and goversion from which Kubernetes Event Exporter was built.",
+				ConstLabels: prometheus.Labels{
+					"version":   version.Version,
+					"revision":  version.Revision(),
+					"goversion": version.GoVersion,
+					"goos":      version.GoOS,
+					"goarch":    version.GoArch,
+				},
+			},
+			func() float64 { return 1 },
+		),
 		EventsProcessed: promauto.NewCounter(prometheus.CounterOpts{
 			Name: name_prefix + "events_sent",
 			Help: "The total number of events processed",
@@ -111,5 +127,6 @@ func DestroyMetricsStore(store *Store) {
 	prometheus.Unregister(store.EventsDiscarded)
 	prometheus.Unregister(store.WatchErrors)
 	prometheus.Unregister(store.SendErrors)
+	prometheus.Unregister(store.BuildInfo)
 	store = nil
 }
