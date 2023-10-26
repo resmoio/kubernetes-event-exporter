@@ -22,6 +22,6 @@ kind: ClusterRole
 metadata:
   name: event-exporter
 rules:
-- apiGroups: ["*"]
+- apiGroups: ["*", ""]
   resources: ["*"]
   verbs: ["get", "watch", "list"]
