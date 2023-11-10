@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"github.com/rs/zerolog/log"
 )
 
 type promtailStream struct {
@@ -27,6 +28,7 @@ type LokiConfig struct {
 	StreamLabels map[string]string      `yaml:"streamLabels"`
 	TLS          TLS                    `yaml:"tls"`
 	URL          string                 `yaml:"url"`
+	Headers      map[string]string      `yaml:"headers"`
 }
 
 type Loki struct {
@@ -71,6 +73,17 @@ func (l *Loki) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+
+	for k, v := range l.cfg.Headers {
+		realValue, err := GetString(ev, v)
+		if err != nil {
+			log.Debug().Err(err).Msgf("parse template failed: %s", v)
+			req.Header.Add(k, v)
+		} else {
+			log.Debug().Msgf("request header: {%s: %s}", k, realValue)
+			req.Header.Add(k, realValue)
+		}
+	}
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)

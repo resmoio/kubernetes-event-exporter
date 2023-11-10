@@ -515,6 +515,8 @@ receivers:
 receivers:
   - name: "loki"
     loki:
+      headers: # optional
+        X-Scope-OrgID: tennantID
       streamLabels:
         foo: bar
       url: http://127.0.0.1:3100/loki/api/v1/push
