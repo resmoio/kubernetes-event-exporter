@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-
 // Writer allows to buffer some items and call the Handler function either when the buffer is full or the timeout is
 // reached. There will also be support for concurrency for high volume. The handler function is supposed to return an
 // array of booleans to indicate whether the transfer was successful or not. It can be replaced with status codes in

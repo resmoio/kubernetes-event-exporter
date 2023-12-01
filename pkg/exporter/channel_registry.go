@@ -16,9 +16,9 @@ import (
 // and we might need a mechanism to drop the vents
 // On closing, the registry sends a signal on all exit channels, and then waits for all to complete.
 type ChannelBasedReceiverRegistry struct {
-	ch     map[string]chan kube.EnhancedEvent
-	exitCh map[string]chan interface{}
-	wg     *sync.WaitGroup
+	ch           map[string]chan kube.EnhancedEvent
+	exitCh       map[string]chan interface{}
+	wg           *sync.WaitGroup
 	MetricsStore *metrics.Store
 }
 

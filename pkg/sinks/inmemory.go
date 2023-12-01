@@ -2,6 +2,7 @@ package sinks
 
 import (
 	"context"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 

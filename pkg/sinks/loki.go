@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/rs/zerolog/log"
 )
 
 type promtailStream struct {

@@ -15,12 +15,12 @@ var (
 
 func Revision() string {
 	bi, ok := debug.ReadBuildInfo()
-	
-	if ok {	
+
+	if ok {
 		for _, kv := range bi.Settings {
 			switch kv.Key {
-				case "vcs.revision":
-					return kv.Value
+			case "vcs.revision":
+				return kv.Value
 			}
 		}
 	}
