@@ -74,6 +74,24 @@ receivers:
 * A route can have many sub-routes, forming a tree.
 * Routing starts from the root route.
 
+## sent or ignore event update
+if an event occur many times, It will only update the event fields like ```count``` and ```lastTimestamp```.
+By default ```kubernetes-event-exporter``` will ignore the eventUpdate and will not sent to the recivers.
+If you Don't want to miss every event,you can use trigger ```sentUpdateEvent``` configurated in each sink to controll whether sent the event to the reciver.
+```azure
+sentUpdateEvent true|false  (default false)
+true: sent every matching event to the reciver including when the event updated 
+false: ignore the event updted
+```
+
+for example:
+```azure
+receivers:
+  - name: "dump"
+    stdout: 
+      sentUpdateEvent: true
+```
+
 ## Using Secrets
 
 In your config file, you can refer to environment variables as `${API_KEY}` therefore you can use ConfigMap or Secrets 

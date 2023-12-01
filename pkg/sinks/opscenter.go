@@ -14,6 +14,7 @@ import (
 
 // OpsCenterConfig is the configuration of the Sink.
 type OpsCenterConfig struct {
+	SentUpdateEvent bool              `yaml:"sentUpdateEvent,omitempty"`
 	Category        string            `yaml:"category"`
 	Description     string            `yaml:"description"`
 	Notifications   []string          `yaml:"notifications"`
@@ -51,6 +52,10 @@ func NewOpsCenterSink(cfg *OpsCenterConfig) (Sink, error) {
 
 // Send ...
 func (s *OpsCenterSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !s.cfg.SentUpdateEvent {
+		return nil
+	}
 	oi := ssm.CreateOpsItemInput{}
 	t, err := GetString(ev, s.cfg.Title)
 	if err != nil {

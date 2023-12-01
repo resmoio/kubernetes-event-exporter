@@ -10,9 +10,10 @@ import (
 )
 
 type KinesisConfig struct {
-	StreamName string                 `yaml:"streamName"`
-	Region     string                 `yaml:"region"`
-	Layout     map[string]interface{} `yaml:"layout"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	StreamName      string                 `yaml:"streamName"`
+	Region          string                 `yaml:"region"`
+	Layout          map[string]interface{} `yaml:"layout"`
 }
 
 type KinesisSink struct {
@@ -35,6 +36,10 @@ func NewKinesisSink(cfg *KinesisConfig) (Sink, error) {
 }
 
 func (k *KinesisSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !k.cfg.SentUpdateEvent {
+		return nil
+	}
 	var toSend []byte
 
 	if k.cfg.Layout != nil {

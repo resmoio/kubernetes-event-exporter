@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
-	"github.com/rs/zerolog/log"
 )
 
 type promtailStream struct {
@@ -24,11 +24,12 @@ type LokiMsg struct {
 }
 
 type LokiConfig struct {
-	Layout       map[string]interface{} `yaml:"layout"`
-	StreamLabels map[string]string      `yaml:"streamLabels"`
-	TLS          TLS                    `yaml:"tls"`
-	URL          string                 `yaml:"url"`
-	Headers      map[string]string      `yaml:"headers"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	Layout          map[string]interface{} `yaml:"layout"`
+	StreamLabels    map[string]string      `yaml:"streamLabels"`
+	TLS             TLS                    `yaml:"tls"`
+	URL             string                 `yaml:"url"`
+	Headers         map[string]string      `yaml:"headers"`
 }
 
 type Loki struct {
@@ -52,6 +53,10 @@ func generateTimestamp() string {
 }
 
 func (l *Loki) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !l.cfg.SentUpdateEvent {
+		return nil
+	}
 	eventBody, err := serializeEventWithLayout(l.cfg.Layout, ev)
 	if err != nil {
 		return err

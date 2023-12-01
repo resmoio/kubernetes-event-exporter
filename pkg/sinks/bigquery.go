@@ -138,6 +138,7 @@ func bigQueryImportJsonFromFile(path string, cfg *BigQueryConfig) error {
 }
 
 type BigQueryConfig struct {
+	SentUpdateEvent bool `yaml:"sentUpdateEvent,omitempty"`
 	// BigQuery table config
 	Location string `yaml:"location"`
 	Project  string `yaml:"project"`
@@ -217,14 +218,19 @@ func NewBigQuerySink(cfg *BigQueryConfig) (*BigQuerySink, error) {
 	)
 	batchWriter.Start()
 
-	return &BigQuerySink{batchWriter: batchWriter}, nil
+	return &BigQuerySink{batchWriter: batchWriter, config: cfg}, nil
 }
 
 type BigQuerySink struct {
 	batchWriter *batch.Writer
+	config      *BigQueryConfig
 }
 
 func (e *BigQuerySink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !e.config.SentUpdateEvent {
+		return nil
+	}
 	e.batchWriter.Submit(ev)
 	return nil
 }

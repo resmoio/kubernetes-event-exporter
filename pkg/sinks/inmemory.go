@@ -6,7 +6,8 @@ import (
 )
 
 type InMemoryConfig struct {
-	Ref *InMemory
+	SentUpdateEvent bool `yaml:"sentUpdateEvent,omitempty"`
+	Ref             *InMemory
 }
 
 type InMemory struct {
@@ -15,6 +16,10 @@ type InMemory struct {
 }
 
 func (i *InMemory) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !i.Config.SentUpdateEvent {
+		return nil
+	}
 	i.Events = append(i.Events, ev)
 	return nil
 }
@@ -22,5 +27,3 @@ func (i *InMemory) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 func (i *InMemory) Close() {
 	// No-op
 }
-
-

@@ -2,20 +2,21 @@ package sinks
 
 import (
 	"context"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/alert"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/client"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type OpsgenieConfig struct {
-	ApiKey      string            `yaml:"apiKey"`
-	URL         client.ApiUrl     `yaml:"URL"`
-	Priority    string            `yaml:"priority"`
-	Message     string            `yaml:"message"`
-	Alias       string            `yaml:"alias"`
-	Description string            `yaml:"description"`
-	Tags        []string          `yaml:"tags"`
-	Details     map[string]string `yaml:"details"`
+	SentUpdateEvent bool              `yaml:"sentUpdateEvent,omitempty"`
+	ApiKey          string            `yaml:"apiKey"`
+	URL             client.ApiUrl     `yaml:"URL"`
+	Priority        string            `yaml:"priority"`
+	Message         string            `yaml:"message"`
+	Alias           string            `yaml:"alias"`
+	Description     string            `yaml:"description"`
+	Tags            []string          `yaml:"tags"`
+	Details         map[string]string `yaml:"details"`
 }
 
 type OpsgenieSink struct {
@@ -48,6 +49,10 @@ func NewOpsgenieSink(config *OpsgenieConfig) (Sink, error) {
 }
 
 func (o *OpsgenieSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !o.cfg.SentUpdateEvent {
+		return nil
+	}
 	request := alert.CreateAlertRequest{
 		Priority: alert.Priority(o.cfg.Priority),
 	}

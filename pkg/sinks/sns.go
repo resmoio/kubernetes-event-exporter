@@ -9,9 +9,10 @@ import (
 )
 
 type SNSConfig struct {
-	TopicARN string                 `yaml:"topicARN"`
-	Region   string                 `yaml:"region"`
-	Layout   map[string]interface{} `yaml:"layout"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	TopicARN        string                 `yaml:"topicARN"`
+	Region          string                 `yaml:"region"`
+	Layout          map[string]interface{} `yaml:"layout"`
 }
 
 type SNSSink struct {

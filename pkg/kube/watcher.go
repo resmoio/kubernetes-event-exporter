@@ -57,11 +57,13 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 
 func (e *EventWatcher) OnAdd(obj interface{}) {
 	event := obj.(*corev1.Event)
-	e.onEvent(event)
+	e.onEvent(event, false)
 }
 
 func (e *EventWatcher) OnUpdate(oldObj, newObj interface{}) {
 	// Ignore updates
+	event := newObj.(*corev1.Event)
+	e.onEvent(event, true)
 }
 
 // Ignore events older than the maxEventAgeSeconds
@@ -87,7 +89,7 @@ func (e *EventWatcher) isEventDiscarded(event *corev1.Event) bool {
 	return false
 }
 
-func (e *EventWatcher) onEvent(event *corev1.Event) {
+func (e *EventWatcher) onEvent(event *corev1.Event, IsUpdateEvent bool) {
 	if e.isEventDiscarded(event) {
 		return
 	}
@@ -102,7 +104,8 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	e.metricsStore.EventsProcessed.Inc()
 
 	ev := &EnhancedEvent{
-		Event: *event.DeepCopy(),
+		Event:         *event.DeepCopy(),
+		IsUpdateEvent: IsUpdateEvent,
 	}
 	ev.Event.ManagedFields = nil
 

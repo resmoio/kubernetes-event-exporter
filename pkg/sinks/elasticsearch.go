@@ -18,6 +18,7 @@ import (
 )
 
 type ElasticsearchConfig struct {
+	SentUpdateEvent bool `yaml:"sentUpdateEvent,omitempty"`
 	// Connection specific
 	Hosts    []string          `yaml:"hosts"`
 	Username string            `yaml:"username"`
@@ -97,6 +98,10 @@ func formatIndexName(pattern string, when time.Time) string {
 }
 
 func (e *Elasticsearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !e.cfg.SentUpdateEvent {
+		return nil
+	}
 	var toSend []byte
 
 	if e.cfg.DeDot {
