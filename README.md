@@ -74,6 +74,19 @@ receivers:
 * A route can have many sub-routes, forming a tree.
 * Routing starts from the root route.
 
+### Options
+These are all the options you have for configurating;
+
+| Name          | Description             | Value                  |
+|---------------|-------------------------|------------------------|
+| logLevel      | Log level configuration | error                  |
+| logFormat     | Log format configuration| json                   |
+| clusterName   | Cluster name            | my-super-local-cluster |
+| namespace     | The namespace           | NULL (optional)        |
+| route.routes  | Route match configuration|                        |
+| receivers[0]  | Receiver name           | dump                   |
+| receivers[0].stdout | Receiver stdout configuration | {}             |
+
 ## Using Secrets
 
 In your config file, you can refer to environment variables as `${API_KEY}` therefore you can use ConfigMap or Secrets 
