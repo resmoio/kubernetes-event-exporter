@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 )
 
@@ -86,6 +87,7 @@ func (l *Loki) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	}
 
 	client := http.DefaultClient
+	client.Transport = l.transport
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
