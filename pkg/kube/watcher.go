@@ -25,6 +25,7 @@ type EventWatcher struct {
 	stopper             chan struct{}
 	objectMetadataCache ObjectMetadataProvider
 	omitLookup          bool
+	watchUpdate         bool
 	fn                  EventHandler
 	maxEventAgeSeconds  time.Duration
 	metricsStore        *metrics.Store
@@ -32,7 +33,7 @@ type EventWatcher struct {
 	clientset           *kubernetes.Clientset
 }
 
-func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler, omitLookup bool, cacheSize int) *EventWatcher {
+func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler, omitLookup, watchUpdate bool, cacheSize int) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	informer := factory.Core().V1().Events().Informer()
@@ -42,6 +43,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		stopper:             make(chan struct{}),
 		objectMetadataCache: NewObjectMetadataProvider(cacheSize),
 		omitLookup:          omitLookup,
+		watchUpdate:         watchUpdate,
 		fn:                  fn,
 		maxEventAgeSeconds:  time.Second * time.Duration(MaxEventAgeSeconds),
 		metricsStore:        metricsStore,
@@ -62,8 +64,12 @@ func (e *EventWatcher) OnAdd(obj interface{}) {
 	e.onEvent(event)
 }
 
-func (e *EventWatcher) OnUpdate(oldObj, newObj interface{}) {
-	// Ignore updates
+func (e *EventWatcher) OnUpdate(_, newObj interface{}) {
+	// new event emit to watcher when e.enableUpdate is true
+	if e.watchUpdate {
+		event := newObj.(*corev1.Event)
+		e.onEvent(event)
+	}
 }
 
 // Ignore events older than the maxEventAgeSeconds
@@ -152,3 +158,4 @@ func (e *EventWatcher) Stop() {
 func (e *EventWatcher) setStartUpTime(time time.Time) {
 	startUpTime = time
 }
+
