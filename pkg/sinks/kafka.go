@@ -2,14 +2,19 @@ package sinks
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/Shopify/sarama"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
+
+	"github.com/xdg-go/scram"
 )
 
 // KafkaConfig is the Kafka producer configuration
@@ -28,9 +33,10 @@ type KafkaConfig struct {
 		InsecureSkipVerify bool   `yaml:"insecureSkipVerify"`
 	} `yaml:"tls"`
 	SASL struct {
-		Enable   bool   `yaml:"enable"`
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
+		Enable    bool   `yaml:"enable"`
+		Username  string `yaml:"username"`
+		Password  string `yaml:"password"`
+		Mechanism string `yaml:"mechanism" default:"plain"`
 	} `yaml:"sasl"`
 	KafkaEncode Avro `yaml:"avro"`
 }
@@ -151,7 +157,7 @@ func createSaramaProducer(cfg *KafkaConfig) (sarama.SyncProducer, error) {
 
 		caCert, err := os.ReadFile(cfg.TLS.CaFile)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error loading ca file: %w", err)
 		}
 
 		caCertPool := x509.NewCertPool()
@@ -178,6 +184,17 @@ func createSaramaProducer(cfg *KafkaConfig) (sarama.SyncProducer, error) {
 		saramaConfig.Net.SASL.Enable = true
 		saramaConfig.Net.SASL.User = cfg.SASL.Username
 		saramaConfig.Net.SASL.Password = cfg.SASL.Password
+		if cfg.SASL.Mechanism == "sha512" {
+			saramaConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA512} }
+			saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+		} else if cfg.SASL.Mechanism == "sha256" {
+			saramaConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA256} }
+			saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+		} else if cfg.SASL.Mechanism == "plain" || cfg.SASL.Mechanism == "" {
+			saramaConfig.Net.SASL.Mechanism = sarama.SASLTypePlaintext
+		} else {
+			return nil, fmt.Errorf("invalid scram sha mechanism: %s: can be one of 'sha256', 'sha512' or 'plain'", cfg.SASL.Mechanism)
+		}
 	}
 
 	// TODO: Find a generic way to override all other configs
@@ -189,4 +206,33 @@ func createSaramaProducer(cfg *KafkaConfig) (sarama.SyncProducer, error) {
 	}
 
 	return producer, nil
+}
+
+var (
+	SHA256 scram.HashGeneratorFcn = sha256.New
+	SHA512 scram.HashGeneratorFcn = sha512.New
+)
+
+type XDGSCRAMClient struct {
+	*scram.Client
+	*scram.ClientConversation
+	scram.HashGeneratorFcn
+}
+
+func (x *XDGSCRAMClient) Begin(userName, password, authzID string) (err error) {
+	x.Client, err = x.HashGeneratorFcn.NewClient(userName, password, authzID)
+	if err != nil {
+		return err
+	}
+	x.ClientConversation = x.Client.NewConversation()
+	return nil
+}
+
+func (x *XDGSCRAMClient) Step(challenge string) (response string, err error) {
+	response, err = x.ClientConversation.Step(challenge)
+	return
+}
+
+func (x *XDGSCRAMClient) Done() bool {
+	return x.ClientConversation.Done()
 }

@@ -341,6 +341,7 @@ receivers:
         enable: true
         username: "kube-event-producer"
         password: "kube-event-producer-password"
+        mechanism: "sha512"
       layout: #optional
         kind: "{{ .InvolvedObject.Kind }}"
         namespace: "{{ .InvolvedObject.Namespace }}"
