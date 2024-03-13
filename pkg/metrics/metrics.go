@@ -14,6 +14,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const DefaultRuleName = "default"
+
 type Store struct {
 	EventsProcessed      prometheus.Counter
 	EventsDiscarded      prometheus.Counter
@@ -22,6 +24,7 @@ type Store struct {
 	BuildInfo            prometheus.GaugeFunc
 	KubeApiReadCacheHits prometheus.Counter
 	KubeApiReadRequests  prometheus.Counter
+	EventsMatched		 map[string]prometheus.Counter
 }
 
 // promLogger implements promhttp.Logger
@@ -89,7 +92,30 @@ func Init(addr string, tlsConf string) {
 	go web.ListenAndServe(&metricsServer, &metricsFlags, promLogger)
 }
 
-func NewMetricsStore(name_prefix string) *Store {
+func NewMetricsStore(name_prefix string, matchRouteNames []string) *Store {
+	eventsMatched := make(map[string]prometheus.Counter)
+	hasDefault := false
+	for i := range matchRouteNames {
+		if matchRouteNames[i] == DefaultRuleName {
+			hasDefault = true
+		}
+		eventsMatched[matchRouteNames[i]] = promauto.NewCounter(prometheus.CounterOpts{
+			Name: name_prefix + "events_matched",
+			Help: "The total number of events matched by the route",
+			ConstLabels: prometheus.Labels{
+				"route": matchRouteNames[i],
+			},
+		})
+	}
+	if !hasDefault {
+		eventsMatched[DefaultRuleName] = promauto.NewCounter(prometheus.CounterOpts{
+			Name: name_prefix + "events_matched",
+			Help: "The total number of events matched by the route",
+			ConstLabels: prometheus.Labels{
+				"route": DefaultRuleName,
+			},
+		})
+	}
 	return &Store{
 		BuildInfo: promauto.NewGaugeFunc(
 			prometheus.GaugeOpts{
@@ -129,6 +155,7 @@ func NewMetricsStore(name_prefix string) *Store {
 			Name: name_prefix + "kube_api_read_cache_misses",
 			Help: "The total number of read requests served from kube-apiserver when looking up object metadata",
 		}),
+		EventsMatched: eventsMatched,
 	}
 }
 
@@ -140,5 +167,8 @@ func DestroyMetricsStore(store *Store) {
 	prometheus.Unregister(store.BuildInfo)
 	prometheus.Unregister(store.KubeApiReadCacheHits)
 	prometheus.Unregister(store.KubeApiReadRequests)
+	for _, counter := range store.EventsMatched {
+		prometheus.Unregister(counter)
+	}
 	store = nil
 }

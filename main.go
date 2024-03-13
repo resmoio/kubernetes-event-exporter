@@ -78,7 +78,7 @@ func main() {
 	kubecfg.Burst = cfg.KubeBurst
 
 	metrics.Init(*addr, *tlsConf)
-	metricsStore := metrics.NewMetricsStore(cfg.MetricsNamePrefix)
+	metricsStore := metrics.NewMetricsStore(cfg.MetricsNamePrefix, cfg.Route.GetMatchNames())
 
 	engine := exporter.NewEngine(&cfg, &exporter.ChannelBasedReceiverRegistry{MetricsStore: metricsStore})
 	onEvent := engine.OnEvent
