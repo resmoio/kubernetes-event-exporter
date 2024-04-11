@@ -522,3 +522,27 @@ receivers:
         foo: bar
       url: http://127.0.0.1:3100/loki/api/v1/push
 ```
+
+# Prometheus
+
+The Prometheus receiver emits event count metrics that Prometheus can scrape. Prometheus must
+be configured to scrape the kubernetes-event-exporter metrics.
+
+Resource kinds and event reasons must be specified. Metrics will be emitted for only those
+resources and their associated events.
+
+```yaml
+receivers:
+  - name: "prometheus"
+    prometheus:
+      # Specify a prefix for all event count metrics
+      eventsMetricsNamePrefix: "metric_prefix_"
+      # Specify resource kinds and which event reasons to capture for each kind
+      # Only events with the given reasons for each kind will be emitted
+      reasonFilter:
+        Pod:
+        - "FailedMount"
+        - "Unhealthy"
+        Job:
+        - "DeadlineExceeded"
+```
