@@ -51,52 +51,52 @@ func TestPrometheusSink_Send(t *testing.T) {
 	testEvent := mockEvent("Pod", "testpod", "testnamespace", "Starting", 1)
 
 	tests := []struct {
-		name                  string
-		configKind            string
-		configReason          string
-		ev                    *kube.EnhancedEvent
-		wantPrometheusLabels  prometheus.Labels
-		wantErr               bool
-		wantSetCalled         bool
-		wantDeleteCalled      bool
+		name                 string
+		configKind           string
+		configReason         string
+		ev                   *kube.EnhancedEvent
+		wantPrometheusLabels prometheus.Labels
+		wantErr              bool
+		wantSetCalled        bool
+		wantDeleteCalled     bool
 	}{
 		{
-			name:                  "emits desired resource event with resource label",
-			configKind:            configKind,
-			configReason:          configReason,
-			ev:                    testEvent,
+			name:         "emits desired resource event",
+			configKind:   configKind,
+			configReason: configReason,
+			ev:           testEvent,
 			wantPrometheusLabels: prometheus.Labels{
-				strings.ToLower(configKind):	testEvent.InvolvedObject.Name,
-				"namespace":            		testEvent.InvolvedObject.Namespace,
-				"reason":               		configReason,
+				strings.ToLower(configKind): testEvent.InvolvedObject.Name,
+				"namespace":                 testEvent.InvolvedObject.Namespace,
+				"reason":                    configReason,
 			},
 			wantErr:          false,
 			wantSetCalled:    true,
 			wantDeleteCalled: false,
 		},
 		{
-			name:                  "deletes desired resource event with resource label",
-			configKind:            configKind,
-			configReason:          "Creating",
-			ev:                    testEvent,
+			name:         "deletes desired resource event",
+			configKind:   configKind,
+			configReason: "Creating",
+			ev:           testEvent,
 			wantPrometheusLabels: prometheus.Labels{
-				strings.ToLower(configKind):	testEvent.InvolvedObject.Name,
-				"namespace":            		testEvent.InvolvedObject.Namespace,
-				"reason":               		"Creating",
+				strings.ToLower(configKind): testEvent.InvolvedObject.Name,
+				"namespace":                 testEvent.InvolvedObject.Namespace,
+				"reason":                    "Creating",
 			},
 			wantErr:          false,
 			wantSetCalled:    false,
 			wantDeleteCalled: true,
 		},
 		{
-			name:                  "does nothing if kind is not expected",
-			configKind:            "ReplicaSet",
-			configReason:          "SuccessfulCreate",
-			ev:                    testEvent,
-			wantPrometheusLabels:  prometheus.Labels{},
-			wantErr:               false,
-			wantSetCalled:         false,
-			wantDeleteCalled:      false,
+			name:                 "does nothing if kind is not expected",
+			configKind:           "ReplicaSet",
+			configReason:         "SuccessfulCreate",
+			ev:                   testEvent,
+			wantPrometheusLabels: prometheus.Labels{},
+			wantErr:              false,
+			wantSetCalled:        false,
+			wantDeleteCalled:     false,
 		},
 	}
 	for _, tt := range tests {
@@ -112,8 +112,8 @@ func TestPrometheusSink_Send(t *testing.T) {
 					EventsMetricsNamePrefix: "test_prefix_",
 					ReasonFilter:            map[string][]string{tt.configKind: {tt.configReason}},
 				},
-				kinds:              []string{tt.configKind},
-				metricsByKind:      map[string]PrometheusGaugeVec{tt.configKind: mockPodMetric},
+				kinds:         []string{tt.configKind},
+				metricsByKind: map[string]PrometheusGaugeVec{tt.configKind: mockPodMetric},
 			}
 			if err := o.Send(context.TODO(), tt.ev); (err != nil) != tt.wantErr {
 				t.Errorf("PrometheusSink.Send() error = %v, wantErr %v", err, tt.wantErr)
