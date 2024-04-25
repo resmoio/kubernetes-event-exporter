@@ -65,7 +65,14 @@ type OpenSearch struct {
 
 var osRegex = regexp.MustCompile(`(?s){(.*)}`)
 
-func osFormatIndexName(pattern string, when time.Time) string {
+func osFormatIndexName(newpattern string, when time.Time, ev *kube.EnhancedEvent) (string, error) {
+	// expand values from the event before adding the timestamps
+	pattern, err := GetString(ev, newpattern)
+
+	if err != nil {
+		return "", err
+	}
+
 	m := osRegex.FindAllStringSubmatchIndex(pattern, -1)
 	current := 0
 	var builder strings.Builder
@@ -80,7 +87,7 @@ func osFormatIndexName(pattern string, when time.Time) string {
 
 	builder.WriteString(pattern[current:])
 
-	return builder.String()
+	return builder.String(), nil
 }
 
 func (e *OpenSearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
@@ -107,7 +114,11 @@ func (e *OpenSearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	var index string
 	if len(e.cfg.IndexFormat) > 0 {
 		now := time.Now()
-		index = osFormatIndexName(e.cfg.IndexFormat, now)
+		var err error
+		index, err = osFormatIndexName(e.cfg.IndexFormat, now, ev)
+		if err != nil {
+			return err
+		}
 	} else {
 		index = e.cfg.Index
 	}

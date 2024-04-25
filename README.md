@@ -186,8 +186,8 @@ receivers:
       hosts:
         - http://localhost:9200
       index: kube-events
-      # Ca be used optionally for time based indices, accepts Go time formatting directives
-      indexFormat: "kube-events-{2006-01-02}"
+      # Can be used optionally for time based indices, accepts templates and Go time formatting directives
+      indexFormat: "kube-events-{{ .InvolvedObject.Namespace }}-{2006-01-02}"
       username: # optional
       password: # optional
       # If set to true, it allows updating the same document in ES (might be useful handling count)
