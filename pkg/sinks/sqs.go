@@ -2,6 +2,7 @@ package sinks
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -9,9 +10,10 @@ import (
 )
 
 type SQSConfig struct {
-	QueueName string                 `yaml:"queueName"`
-	Region    string                 `yaml:"region"`
-	Layout    map[string]interface{} `yaml:"layout"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	QueueName       string                 `yaml:"queueName"`
+	Region          string                 `yaml:"region"`
+	Layout          map[string]interface{} `yaml:"layout"`
 }
 
 type SQSSink struct {
@@ -45,6 +47,10 @@ func NewSQSSink(cfg *SQSConfig) (Sink, error) {
 }
 
 func (s *SQSSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !s.cfg.SentUpdateEvent {
+		return nil
+	}
 	toSend, e := serializeEventWithLayout(s.cfg.Layout, ev)
 	if e != nil {
 		return e

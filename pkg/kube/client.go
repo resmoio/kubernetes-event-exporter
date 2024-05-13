@@ -1,10 +1,11 @@
 package kube
 
 import (
+	"os"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
 )
 
 // GetKubernetesClient returns the client if it's possible in cluster, otherwise tries to read HOME

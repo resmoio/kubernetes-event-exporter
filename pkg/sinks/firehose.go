@@ -11,6 +11,7 @@ import (
 )
 
 type FirehoseConfig struct {
+	SentUpdateEvent    bool                   `yaml:"sentUpdateEvent,omitempty"`
 	DeliveryStreamName string                 `yaml:"deliveryStreamName"`
 	Region             string                 `yaml:"region"`
 	Layout             map[string]interface{} `yaml:"layout"`
@@ -38,6 +39,10 @@ func NewFirehoseSink(cfg *FirehoseConfig) (Sink, error) {
 }
 
 func (f *FirehoseSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !f.cfg.SentUpdateEvent {
+		return nil
+	}
 	var toSend []byte
 
 	if f.cfg.DeDot {

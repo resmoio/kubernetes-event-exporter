@@ -9,6 +9,7 @@ import (
 )
 
 type PubsubConfig struct {
+	SentUpdateEvent bool   `yaml:"sentUpdateEvent,omitempty"`
 	GcloudProjectId string `yaml:"gcloud_project_id"`
 	Topic           string `yaml:"topic"`
 	CreateTopic     bool   `yaml:"create_topic"`
@@ -46,6 +47,10 @@ func NewPubsubSink(cfg *PubsubConfig) (Sink, error) {
 }
 
 func (ps *PubsubSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !ps.cfg.SentUpdateEvent {
+		return nil
+	}
 	msg := &pubsub.Message{
 		Data: ev.ToJSON(),
 	}

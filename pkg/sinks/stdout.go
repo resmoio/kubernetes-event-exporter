@@ -11,6 +11,7 @@ import (
 )
 
 type StdoutConfig struct {
+	SentUpdateEvent bool `yaml:"sentUpdateEvent,omitempty"`
 	// DeDot all labels and annotations in the event. For both the event and the involvedObject
 	DeDot  bool                   `yaml:"deDot"`
 	Layout map[string]interface{} `yaml:"layout"`
@@ -41,6 +42,10 @@ func (f *Stdout) Close() {
 }
 
 func (f *Stdout) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !f.cfg.SentUpdateEvent {
+		return nil
+	}
 	if f.cfg.DeDot {
 		de := ev.DeDot()
 		ev = &de

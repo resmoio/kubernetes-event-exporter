@@ -19,6 +19,7 @@ import (
 
 // KafkaConfig is the Kafka producer configuration
 type KafkaConfig struct {
+	SentUpdateEvent  bool                   `yaml:"sentUpdateEvent,omitempty"`
 	Topic            string                 `yaml:"topic"`
 	Brokers          []string               `yaml:"brokers"`
 	Layout           map[string]interface{} `yaml:"layout"`
@@ -88,6 +89,10 @@ func NewKafkaSink(cfg *KafkaConfig) (Sink, error) {
 
 // Send an event to Kafka synchronously
 func (k *KafkaSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !k.cfg.SentUpdateEvent {
+		return nil
+	}
 	var toSend []byte
 
 	if k.cfg.Layout != nil {

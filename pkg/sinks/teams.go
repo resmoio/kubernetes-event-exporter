@@ -13,9 +13,10 @@ import (
 )
 
 type TeamsConfig struct {
-	Endpoint string                 `yaml:"endpoint"`
-	Layout   map[string]interface{} `yaml:"layout"`
-	Headers  map[string]string      `yaml:"headers"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	Endpoint        string                 `yaml:"endpoint"`
+	Layout          map[string]interface{} `yaml:"layout"`
+	Headers         map[string]string      `yaml:"headers"`
 }
 
 func NewTeamsSink(cfg *TeamsConfig) (Sink, error) {
@@ -31,6 +32,11 @@ func (w *Teams) Close() {
 }
 
 func (w *Teams) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !w.cfg.SentUpdateEvent {
+		return nil
+	}
+
 	event, err := serializeEventWithLayout(w.cfg.Layout, ev)
 	if err != nil {
 		return err

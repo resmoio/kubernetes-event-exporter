@@ -3,18 +3,21 @@ package sinks
 import (
 	"context"
 	"encoding/json"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"log/syslog"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type SyslogConfig struct {
-	Network string `yaml:"network"`
-	Address string `yaml:"address"`
-	Tag     string `yaml:"tag"`
+	SentUpdateEvent bool   `yaml:"sentUpdateEvent,omitempty"`
+	Network         string `yaml:"network"`
+	Address         string `yaml:"address"`
+	Tag             string `yaml:"tag"`
 }
 
 type SyslogSink struct {
-	sw *syslog.Writer
+	sw  *syslog.Writer
+	cfg *SyslogConfig
 }
 
 func NewSyslogSink(config *SyslogConfig) (Sink, error) {
@@ -22,7 +25,7 @@ func NewSyslogSink(config *SyslogConfig) (Sink, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SyslogSink{sw: w}, nil
+	return &SyslogSink{sw: w, cfg: config}, nil
 }
 
 func (w *SyslogSink) Close() {
@@ -30,7 +33,10 @@ func (w *SyslogSink) Close() {
 }
 
 func (w *SyslogSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
-
+	// skip update event
+	if ev.IsUpdateEvent && !w.cfg.SentUpdateEvent {
+		return nil
+	}
 	if b, err := json.Marshal(ev); err == nil {
 		_, writeErr := w.sw.Write(b)
 

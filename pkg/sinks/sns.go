@@ -2,6 +2,7 @@ package sinks
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
@@ -9,9 +10,10 @@ import (
 )
 
 type SNSConfig struct {
-	TopicARN string                 `yaml:"topicARN"`
-	Region   string                 `yaml:"region"`
-	Layout   map[string]interface{} `yaml:"layout"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	TopicARN        string                 `yaml:"topicARN"`
+	Region          string                 `yaml:"region"`
+	Layout          map[string]interface{} `yaml:"layout"`
 }
 
 type SNSSink struct {

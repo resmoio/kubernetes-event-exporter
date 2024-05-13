@@ -10,12 +10,13 @@ import (
 )
 
 type FileConfig struct {
-	Path       string                 `yaml:"path"`
-	Layout     map[string]interface{} `yaml:"layout"`
-	MaxSize    int                    `yaml:"maxsize"`
-	MaxAge     int                    `yaml:"maxage"`
-	MaxBackups int                    `yaml:"maxbackups"`
-	DeDot      bool                   `yaml:"deDot"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	Path            string                 `yaml:"path"`
+	Layout          map[string]interface{} `yaml:"layout"`
+	MaxSize         int                    `yaml:"maxsize"`
+	MaxAge          int                    `yaml:"maxage"`
+	MaxBackups      int                    `yaml:"maxbackups"`
+	DeDot           bool                   `yaml:"deDot"`
 }
 
 func (f *FileConfig) Validate() error {
@@ -27,6 +28,7 @@ type File struct {
 	encoder *json.Encoder
 	layout  map[string]interface{}
 	DeDot   bool
+	config  *FileConfig
 }
 
 func NewFileSink(config *FileConfig) (*File, error) {
@@ -42,6 +44,7 @@ func NewFileSink(config *FileConfig) (*File, error) {
 		encoder: json.NewEncoder(writer),
 		layout:  config.Layout,
 		DeDot:   config.DeDot,
+		config:  config,
 	}, nil
 }
 
@@ -50,6 +53,10 @@ func (f *File) Close() {
 }
 
 func (f *File) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !f.config.SentUpdateEvent {
+		return nil
+	}
 	if f.DeDot {
 		de := ev.DeDot()
 		ev = &de

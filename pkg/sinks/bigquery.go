@@ -2,19 +2,20 @@ package sinks
 
 import (
 	"bufio"
-	"cloud.google.com/go/bigquery"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/batch"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
-	"google.golang.org/api/option"
 	"math/rand"
 	"os"
 	"time"
 	"unicode"
+
+	"cloud.google.com/go/bigquery"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/batch"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/api/option"
 )
 
 // Returns a map filtering out keys that have nil value assigned.
@@ -138,6 +139,7 @@ func bigQueryImportJsonFromFile(path string, cfg *BigQueryConfig) error {
 }
 
 type BigQueryConfig struct {
+	SentUpdateEvent bool `yaml:"sentUpdateEvent,omitempty"`
 	// BigQuery table config
 	Location string `yaml:"location"`
 	Project  string `yaml:"project"`
@@ -217,14 +219,19 @@ func NewBigQuerySink(cfg *BigQueryConfig) (*BigQuerySink, error) {
 	)
 	batchWriter.Start()
 
-	return &BigQuerySink{batchWriter: batchWriter}, nil
+	return &BigQuerySink{batchWriter: batchWriter, config: cfg}, nil
 }
 
 type BigQuerySink struct {
 	batchWriter *batch.Writer
+	config      *BigQueryConfig
 }
 
 func (e *BigQuerySink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !e.config.SentUpdateEvent {
+		return nil
+	}
 	e.batchWriter.Submit(ev)
 	return nil
 }

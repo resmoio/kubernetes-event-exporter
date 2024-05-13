@@ -1,10 +1,11 @@
 package exporter
 
 import (
+	"testing"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 // testReceiverRegistry just records the events to the registry so that tests can validate routing behavior

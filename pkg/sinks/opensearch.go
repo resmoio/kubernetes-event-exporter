@@ -18,6 +18,7 @@ import (
 )
 
 type OpenSearchConfig struct {
+	SentUpdateEvent bool `yaml:"sentUpdateEvent,omitempty"`
 	// Connection specific
 	Hosts    []string `yaml:"hosts"`
 	Username string   `yaml:"username"`
@@ -84,6 +85,10 @@ func osFormatIndexName(pattern string, when time.Time) string {
 }
 
 func (e *OpenSearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !e.cfg.SentUpdateEvent {
+		return nil
+	}
 	var toSend []byte
 
 	if e.cfg.DeDot {

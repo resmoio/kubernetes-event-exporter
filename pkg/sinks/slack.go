@@ -10,14 +10,15 @@ import (
 )
 
 type SlackConfig struct {
-	Token      string            `yaml:"token"`
-	Channel    string            `yaml:"channel"`
-	Message    string            `yaml:"message"`
-	Color      string            `yaml:"color"`
-	Footer     string            `yaml:"footer"`
-	Title      string            `yaml:"title"`
-	AuthorName string            `yaml:"author_name"`
-	Fields     map[string]string `yaml:"fields"`
+	SentUpdateEvent bool              `yaml:"sentUpdateEvent,omitempty"`
+	Token           string            `yaml:"token"`
+	Channel         string            `yaml:"channel"`
+	Message         string            `yaml:"message"`
+	Color           string            `yaml:"color"`
+	Footer          string            `yaml:"footer"`
+	Title           string            `yaml:"title"`
+	AuthorName      string            `yaml:"author_name"`
+	Fields          map[string]string `yaml:"fields"`
 }
 
 type SlackSink struct {
@@ -33,6 +34,10 @@ func NewSlackSink(cfg *SlackConfig) (Sink, error) {
 }
 
 func (s *SlackSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !s.cfg.SentUpdateEvent {
+		return nil
+	}
 	channel, err := GetString(ev, s.cfg.Channel)
 	if err != nil {
 		return err

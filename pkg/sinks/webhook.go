@@ -13,10 +13,11 @@ import (
 )
 
 type WebhookConfig struct {
-	Endpoint string                 `yaml:"endpoint"`
-	TLS      TLS                    `yaml:"tls"`
-	Layout   map[string]interface{} `yaml:"layout"`
-	Headers  map[string]string      `yaml:"headers"`
+	SentUpdateEvent bool                   `yaml:"sentUpdateEvent,omitempty"`
+	Endpoint        string                 `yaml:"endpoint"`
+	TLS             TLS                    `yaml:"tls"`
+	Layout          map[string]interface{} `yaml:"layout"`
+	Headers         map[string]string      `yaml:"headers"`
 }
 
 func NewWebhook(cfg *WebhookConfig) (Sink, error) {
@@ -40,6 +41,11 @@ func (w *Webhook) Close() {
 }
 
 func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+	// skip update event
+	if ev.IsUpdateEvent && !w.cfg.SentUpdateEvent {
+		return nil
+	}
+
 	reqBody, err := serializeEventWithLayout(w.cfg.Layout, ev)
 	if err != nil {
 		return err

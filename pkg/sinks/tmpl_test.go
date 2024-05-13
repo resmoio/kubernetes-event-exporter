@@ -1,11 +1,12 @@
 package sinks
 
 import (
+	"testing"
+	"time"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
-	"time"
 )
 
 func TestLayoutConvert(t *testing.T) {
