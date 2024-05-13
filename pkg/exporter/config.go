@@ -34,6 +34,7 @@ type Config struct {
 	KubeBurst          int                       `yaml:"kubeBurst,omitempty"`
 	MetricsNamePrefix  string                    `yaml:"metricsNamePrefix,omitempty"`
 	OmitLookup         bool                      `yaml:"omitLookup,omitempty"`
+	WatchUpdate        bool                      `yaml:"watchUpdate,omitempty"`
 	CacheSize          int                       `yaml:"cacheSize,omitempty"`
 }
 
@@ -112,3 +113,4 @@ func (c *Config) validateMetricsNamePrefix() error {
 	}
 	return nil
 }
+
