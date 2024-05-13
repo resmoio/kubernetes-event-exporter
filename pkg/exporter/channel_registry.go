@@ -22,10 +22,15 @@ type ChannelBasedReceiverRegistry struct {
 	MetricsStore *metrics.Store
 }
 
-func (r *ChannelBasedReceiverRegistry) SendEvent(name string, event *kube.EnhancedEvent) {
+func (r *ChannelBasedReceiverRegistry) SendEvent(name string, event *kube.EnhancedEvent, ruleName string) {
 	ch := r.ch[name]
 	if ch == nil {
 		log.Error().Str("name", name).Msg("There is no channel")
+	}
+	if counter, ok := r.MetricsStore.EventsMatched[ruleName]; ok {
+		counter.Inc()
+	} else {
+		r.MetricsStore.EventsMatched[metrics.DefaultRuleName].Inc()
 	}
 
 	go func() {

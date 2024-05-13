@@ -24,7 +24,7 @@ func (r *Route) ProcessEvent(ev *kube.EnhancedEvent, registry ReceiverRegistry) 
 	for _, rule := range r.Match {
 		if rule.MatchesEvent(ev) {
 			if rule.Receiver != "" {
-				registry.SendEvent(rule.Receiver, ev)
+				registry.SendEvent(rule.Receiver, ev, rule.Name)
 				// Send the event down the hole
 			}
 		} else {
@@ -38,4 +38,17 @@ func (r *Route) ProcessEvent(ev *kube.EnhancedEvent, registry ReceiverRegistry) 
 			subRoute.ProcessEvent(ev, registry)
 		}
 	}
+}
+
+// get names of match rules
+func (r *Route) GetMatchNames() []string {
+	var names []string
+	for _, route := range r.Routes {
+		for _, rule := range route.Match {
+			if rule.Name != "" {
+				names = append(names, rule.Name)
+			}
+		}
+	}
+	return names
 }

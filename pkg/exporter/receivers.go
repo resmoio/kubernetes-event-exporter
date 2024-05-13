@@ -7,7 +7,7 @@ import (
 
 // ReceiverRegistry registers a receiver with the appropriate sink
 type ReceiverRegistry interface {
-	SendEvent(string, *kube.EnhancedEvent)
+	SendEvent(string, *kube.EnhancedEvent, string)
 	Register(string, sinks.Sink)
 	Close()
 }

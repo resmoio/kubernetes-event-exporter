@@ -16,6 +16,7 @@ func matchString(pattern, s string) bool {
 
 // Rule is for matching an event
 type Rule struct {
+	Name 	    string `yaml:"name"`
 	Labels      map[string]string
 	Annotations map[string]string
 	Message     string
