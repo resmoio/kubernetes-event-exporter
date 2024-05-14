@@ -1,8 +1,8 @@
 name: Publish Docker image
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [master]
 
 jobs:
   push_to_registries:
@@ -21,19 +21,61 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sanitize branch name and create version
+        id: create-version
+        env:
+          BRANCH: ${{github.ref_name}}
+          RUN_NUMBER: ${{github.run_number}}
+          BASE_VERSION: "0.0.0"
+        run: |
+          # let's simply use the k8s namespace rules (even stricter) and have the same version(-suffix) for everything
+          # lowercase everything and replace all invalid characters with '-' and trim to 60 characters
+          SANITIZED_BRANCH=$(echo -n "${BRANCH}" | tr '[:upper:]' '[:lower:]' | tr -C 'a-z0-9' '-')
+          SANITIZED_BRANCH="${SANITIZED_BRANCH:0:60}"
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+          BUILD_VERSION="${BASE_VERSION}-${SANITIZED_BRANCH}-${RUN_NUMBER}"
+          echo "BUILD_VERSION=${BUILD_VERSION}" | tee -a $GITHUB_ENV $GITHUB_OUTPUT
+
+      - id: login-gcp
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          images: |
-            ghcr.io/${{ github.repository }}
+          token_format: access_token
+          workload_identity_provider: ${{secrets.GCR_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{secrets.GCR_SERVICE_ACCOUNT}}
+          access_token_lifetime: 1800s
+
+      - name: Log in to EU registry
+        uses: docker/login-action@v2
+        with:
+          registry: us-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.login-gcp.outputs.access_token }}
+
+      - name: Log in to EU registry
+        uses: docker/login-action@v2
+        with:
+          registry: eu-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.login-gcp.outputs.access_token }}
+
+      - name: Log in to Asia registry
+        uses: docker/login-action@v2
+        with:
+          registry: asia-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.login-gcp.outputs.access_token }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{secrets.ECR_AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.ECR_AWS_SECRET_ACCESS_KEY}}
+          aws-region: us-west-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v3
@@ -41,7 +83,10 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{secrets.ECR_US_IMAGE}}:${{steps.create-version.outputs.BUILD_VERSION}}
+            ${{secrets.GCR_ASIA_IMAGE}}:${{steps.create-version.outputs.BUILD_VERSION}}
+            ${{secrets.GCR_US_IMAGE}}:${{steps.create-version.outputs.BUILD_VERSION}}
+            ${{secrets.GCR_EU_IMAGE}}:${{steps.create-version.outputs.BUILD_VERSION}}
           build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
+            VERSION=${{steps.create-version.outputs.BUILD_VERSION}}
