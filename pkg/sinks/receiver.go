@@ -26,6 +26,7 @@ type ReceiverConfig struct {
 	BigQuery      *BigQueryConfig      `yaml:"bigquery"`
 	EventBridge   *EventBridgeConfig   `yaml:"eventbridge"`
 	Pipe          *PipeConfig          `yaml:"pipe"`
+	Prometheus    *PrometheusConfig    `yaml:"prometheus"`
 }
 
 func (r *ReceiverConfig) Validate() error {
@@ -120,6 +121,10 @@ func (r *ReceiverConfig) GetSink() (Sink, error) {
 
 	if r.Loki != nil {
 		return NewLoki(r.Loki)
+	}
+
+	if r.Prometheus != nil {
+		return NewPrometheusSink(r.Prometheus)
 	}
 
 	return nil, errors.New("unknown sink")

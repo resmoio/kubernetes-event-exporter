@@ -122,3 +122,9 @@ receivers:
       deliveryStreamName: "kubernetes-events"
       region: "us-east-1"
       deDot: true
+  - name: "prometheus"
+    prometheus:
+      eventsMetricsNamePrefix: "metric_prefix_"
+      reasonFilter:
+        Pod:
+        - "FailedMount"
