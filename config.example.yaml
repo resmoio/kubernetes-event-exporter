@@ -124,7 +124,7 @@ receivers:
       deDot: true
   - name: "prometheus"
     prometheus:
-    - "Pod"
-    reasonFilter:
-      Pod:
-      - "FailedMount"
+      eventsMetricsNamePrefix: "metric_prefix_"
+      reasonFilter:
+        Pod:
+        - "FailedMount"
