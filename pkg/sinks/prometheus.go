@@ -62,7 +62,7 @@ func NewPrometheusSink(config *PrometheusConfig) (Sink, error) {
 	}, nil
 }
 
-func (o *PrometheusSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
+func (o *PrometheusSink) Send(_ context.Context, ev *kube.EnhancedEvent) error {
 	kind := ev.InvolvedObject.Kind
 	if slices.Contains(o.kinds, kind) {
 		for _, reason := range o.cfg.ReasonFilter[kind] {
