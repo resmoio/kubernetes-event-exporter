@@ -35,6 +35,20 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 2112
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 2112
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 128Mi
       volumes:
         - name: cfg
           configMap:
