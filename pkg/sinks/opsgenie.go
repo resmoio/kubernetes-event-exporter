@@ -2,9 +2,9 @@ package sinks
 
 import (
 	"context"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/alert"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/client"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type OpsgenieConfig struct {
@@ -16,6 +16,13 @@ type OpsgenieConfig struct {
 	Description string            `yaml:"description"`
 	Tags        []string          `yaml:"tags"`
 	Details     map[string]string `yaml:"details"`
+	Entity      string            `yaml:"entity"`
+	Responders  []Responder       `yaml:"responders"`
+}
+
+type Responder struct {
+	Id   string
+	Type string
 }
 
 type OpsgenieSink struct {

@@ -22,5 +22,3 @@ func (i *InMemory) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 func (i *InMemory) Close() {
 	// No-op
 }
-
-
