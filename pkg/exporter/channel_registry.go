@@ -59,7 +59,7 @@ func (r *ChannelBasedReceiverRegistry) Register(name string, receiver sinks.Sink
 				err := receiver.Send(context.Background(), &ev)
 				if err != nil {
 					r.MetricsStore.SendErrors.Inc()
-					log.Debug().Err(err).Str("sink", name).Str("event", ev.Message).Msg("Cannot send event")
+					log.Warn().Err(err).Str("sink", name).Str("event", ev.Message).Msg("Cannot send event")
 				}
 			case <-exitCh:
 				log.Info().Str("sink", name).Msg("Closing the sink")
