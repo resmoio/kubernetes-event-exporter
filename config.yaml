@@ -4,7 +4,26 @@ clusterName: my-super-local-cluster
 route:
   routes:
     - match:
-        - receiver: "dump"
+        - receiver: "loki"
+
 receivers:
-  - name: "dump"
-    stdout: {}
+  - name: "loki"
+    loki:
+      headers: # optional
+        Authorization: Basic $LOKI_BASIC_AUTH_BASE64
+      streamLabels:
+        stream: event
+        cluster: local-test
+      url: $LOKI_URL
+      layout:
+#        namespace: "{{ .Namespace }}"
+        message: "{{ .Message }}"
+        type: "{{ .Type }}"
+        reason: "{{ .Reason }}"
+        kind: "{{ .InvolvedObject.Kind }}"
+        name: "{{.InvolvedObject.Name }}"
+        source: "{{ .Source.Component }}"
+#      ignore_namespaces:
+#        - namespace_one
+#        - namespace_two
+#        - namespace_three
