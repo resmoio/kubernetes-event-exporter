@@ -4,10 +4,11 @@ import (
 	"context"
 	"sync"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
-	"github.com/rs/zerolog/log"
 )
 
 // ChannelBasedReceiverRegistry creates two channels for each receiver. One is for receiving events and other one is
@@ -16,9 +17,9 @@ import (
 // and we might need a mechanism to drop the vents
 // On closing, the registry sends a signal on all exit channels, and then waits for all to complete.
 type ChannelBasedReceiverRegistry struct {
-	ch     map[string]chan kube.EnhancedEvent
-	exitCh map[string]chan interface{}
-	wg     *sync.WaitGroup
+	ch           map[string]chan kube.EnhancedEvent
+	exitCh       map[string]chan interface{}
+	wg           *sync.WaitGroup
 	MetricsStore *metrics.Store
 }
 

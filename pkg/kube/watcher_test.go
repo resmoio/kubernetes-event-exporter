@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 )
 
 func newMockEventWatcher(MaxEventAgeSeconds int64) *EventWatcher {

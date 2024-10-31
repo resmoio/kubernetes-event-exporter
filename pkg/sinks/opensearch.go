@@ -13,8 +13,9 @@ import (
 
 	opensearch "github.com/opensearch-project/opensearch-go"
 	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type OpenSearchConfig struct {

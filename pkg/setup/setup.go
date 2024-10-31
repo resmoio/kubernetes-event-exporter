@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/exporter"
 )
 

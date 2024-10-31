@@ -11,8 +11,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/exporter-toolkit/web"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/version"
 	"github.com/rs/zerolog/log"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/version"
 )
 
 type Store struct {
@@ -76,9 +77,7 @@ func Init(addr string, tlsConf string) {
 		fmt.Fprintf(w, "OK")
 	})
 
-	metricsServer := http.Server{
-		ReadHeaderTimeout: 5 * time.Second}
-
+	metricsServer := http.Server{ReadHeaderTimeout: 5 * time.Second}
 	metricsFlags := web.FlagConfig{
 		WebListenAddresses: &[]string{addr},
 		WebSystemdSocket:   new(bool),

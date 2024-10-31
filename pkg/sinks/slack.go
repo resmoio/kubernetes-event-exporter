@@ -4,9 +4,10 @@ import (
 	"context"
 	"sort"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 	"github.com/slack-go/slack"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type SlackConfig struct {

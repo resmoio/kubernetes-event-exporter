@@ -5,8 +5,9 @@ import (
 	"io"
 
 	"github.com/bytedance/sonic"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"gopkg.in/natefinch/lumberjack.v2"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 var sonicAPI = sonic.Config{

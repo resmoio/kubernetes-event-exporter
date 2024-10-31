@@ -2,19 +2,21 @@ package sinks
 
 import (
 	"bufio"
-	"cloud.google.com/go/bigquery"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/batch"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
-	"google.golang.org/api/option"
 	"math/rand"
 	"os"
 	"time"
 	"unicode"
+
+	"cloud.google.com/go/bigquery"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/api/option"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/batch"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 // Returns a map filtering out keys that have nil value assigned.

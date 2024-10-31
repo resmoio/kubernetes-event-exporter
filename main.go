@@ -8,12 +8,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/exporter"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/setup"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 var (

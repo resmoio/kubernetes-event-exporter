@@ -10,8 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type mockedCreateOps struct {

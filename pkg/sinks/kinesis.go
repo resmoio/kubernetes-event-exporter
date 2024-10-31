@@ -3,9 +3,11 @@ package sinks
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
