@@ -3,7 +3,7 @@ package metrics
 import (
 	"fmt"
 	"net/http"
-	"net/http/pprof"
+	_ "net/http/pprof"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -76,9 +76,6 @@ func Init(addr string, tlsConf string) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK")
 	})
-
-	http.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	http.HandleFunc("/debug/pprof/", pprof.Index)
 
 	metricsServer := http.Server{
 		ReadHeaderTimeout: 5 * time.Second}
