@@ -43,7 +43,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	w, err := clientset.EventsV1().Events(namespace).Watch(ctx, metav1.ListOptions{})
+	w, err := clientset.CoreV1().Events(namespace).Watch(ctx, metav1.ListOptions{})
 	if err != nil {
 		cancel()
 		log.Error().Msgf("Failed to create new events watcher: %v", err)
