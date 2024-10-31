@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/Shopify/sarama v1.37.2
 	github.com/aws/aws-sdk-go v1.44.162
+	github.com/bytedance/sonic v1.12.3
 	github.com/elastic/go-elasticsearch/v7 v7.17.7
 	github.com/goccy/go-yaml v1.11.0
 	github.com/hashicorp/golang-lru v0.5.3
@@ -27,8 +28,14 @@ require (
 )
 
 require (
+	github.com/bytedance/sonic/loader v0.2.0 // indirect
+	github.com/cloudwego/base64x v0.1.4 // indirect
+	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
+	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 )
 
 require (
