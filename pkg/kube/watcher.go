@@ -1,14 +1,16 @@
 package kube
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -19,6 +21,8 @@ var startUpTime = time.Now()
 type EventHandler func(event *EnhancedEvent)
 
 type EventWatcher struct {
+	ctx                 context.Context
+	cancel              context.CancelFunc
 	wg                  sync.WaitGroup
 	informer            cache.SharedInformer
 	stopper             chan struct{}
@@ -29,15 +33,27 @@ type EventWatcher struct {
 	metricsStore        *metrics.Store
 	dynamicClient       *dynamic.DynamicClient
 	clientset           *kubernetes.Clientset
+	watcher             watch.Interface
 }
 
 func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler, omitLookup bool, cacheSize int) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
-	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
-	informer := factory.Core().V1().Events().Informer()
+	//factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
+	//informer := factory.Core().V1().Events().Informer()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	w, err := clientset.EventsV1().Events(namespace).Watch(ctx, metav1.ListOptions{})
+	if err != nil {
+		cancel()
+		return nil
+	}
 
 	watcher := &EventWatcher{
-		informer:            informer,
+		ctx:     ctx,
+		cancel:  cancel,
+		watcher: w,
+		//informer:            informer,
 		stopper:             make(chan struct{}),
 		objectMetadataCache: NewObjectMetadataProvider(cacheSize),
 		omitLookup:          omitLookup,
@@ -48,16 +64,32 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		clientset:           clientset,
 	}
 
-	informer.AddEventHandler(watcher)
-	informer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
-		watcher.metricsStore.WatchErrors.Inc()
-	})
+	//informer.AddEventHandler(watcher)
+	//informer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
+	//	watcher.metricsStore.WatchErrors.Inc()
+	//})
 
 	return watcher
 }
 
+func (e *EventWatcher) loopHandle() {
+	for {
+		select {
+		case evt := <-e.watcher.ResultChan():
+			e.OnAdd(evt.Object)
+		case <-e.ctx.Done():
+			return
+		}
+	}
+}
+
 func (e *EventWatcher) OnAdd(obj interface{}) {
-	event := obj.(*corev1.Event)
+	event, ok := obj.(*corev1.Event)
+	if !ok {
+		log.Error().Msgf("Expected Event type, but got %T", obj)
+		e.metricsStore.WatchErrors.Inc()
+		return
+	}
 	e.onEvent(event)
 }
 
@@ -139,12 +171,13 @@ func (e *EventWatcher) Start() {
 	e.wg.Add(1)
 	go func() {
 		defer e.wg.Done()
-		e.informer.Run(e.stopper)
+		e.loopHandle()
 	}()
 }
 
 func (e *EventWatcher) Stop() {
 	close(e.stopper)
+	e.cancel()
 	e.wg.Wait()
 }
 
