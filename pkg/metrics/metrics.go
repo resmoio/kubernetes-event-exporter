@@ -123,7 +123,7 @@ func newMetricsStore() *Store {
 		WatchErrors: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "watch_errors_total",
-			Help:      "The total number of errors received from the informer",
+			Help:      "The total number of errors received from the client",
 		}),
 		SendErrors: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
