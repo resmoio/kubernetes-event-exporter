@@ -131,7 +131,7 @@ func NewMetricsStore(name_prefix string) *Store {
 			Name: name_prefix + "kube_api_read_cache_misses",
 			Help: "The total number of read requests served from kube-apiserver when looking up object metadata",
 		}),
-		EventsTypeReceived: prometheus.NewCounterVec(prometheus.CounterOpts{
+		EventsTypeReceived: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: name_prefix + "receive_events_total",
 			Help: "The total number of events received from kubernetes",
 		}, []string{"type"}),
