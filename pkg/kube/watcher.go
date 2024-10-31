@@ -31,7 +31,7 @@ type EventWatcher struct {
 	w                  watch.Interface
 }
 
-func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler) (*EventWatcher, error) {
+func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, fn EventHandler) (*EventWatcher, error) {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	ctx, cancel := context.WithCancel(context.Background())
 	w, err := clientset.CoreV1().Events(namespace).Watch(ctx, metav1.ListOptions{})
@@ -46,7 +46,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		w:                  w,
 		fn:                 fn,
 		maxEventAgeSeconds: time.Second * time.Duration(MaxEventAgeSeconds),
-		metricsStore:       metricsStore,
+		metricsStore:       metrics.Default,
 		clientset:          clientset,
 	}
 

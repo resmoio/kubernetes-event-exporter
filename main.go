@@ -79,9 +79,8 @@ func main() {
 	kubecfg.ContentType = "application/vnd.kubernetes.protobuf"
 
 	metrics.Init(*addr, *tlsConf)
-	metricsStore := metrics.NewMetricsStore(cfg.MetricsNamePrefix)
 
-	engine := exporter.NewEngine(&cfg, &exporter.ChannelBasedReceiverRegistry{MetricsStore: metricsStore})
+	engine := exporter.NewEngine(&cfg, &exporter.ChannelBasedReceiverRegistry{MetricsStore: metrics.Default})
 	onEvent := engine.OnEvent
 	if len(cfg.ClusterName) != 0 {
 		onEvent = func(event *kube.EnhancedEvent) {
@@ -92,7 +91,7 @@ func main() {
 		}
 	}
 
-	w, err := kube.NewEventWatcher(kubecfg, cfg.Namespace, cfg.MaxEventAgeSeconds, metricsStore, onEvent)
+	w, err := kube.NewEventWatcher(kubecfg, cfg.Namespace, cfg.MaxEventAgeSeconds, onEvent)
 	if err != nil {
 		log.Fatal().Msgf("Failed to create new events watcher: %v", err)
 	}
