@@ -23,6 +23,7 @@ type Store struct {
 	BuildInfo            prometheus.GaugeFunc
 	KubeApiReadCacheHits prometheus.Counter
 	KubeApiReadRequests  prometheus.Counter
+	EventsTypeReceived   *prometheus.CounterVec
 }
 
 // promLogger implements promhttp.Logger
@@ -130,6 +131,10 @@ func NewMetricsStore(name_prefix string) *Store {
 			Name: name_prefix + "kube_api_read_cache_misses",
 			Help: "The total number of read requests served from kube-apiserver when looking up object metadata",
 		}),
+		EventsTypeReceived: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: name_prefix + "receive_events_total",
+			Help: "The total number of events received from kubernetes",
+		}, []string{"type"}),
 	}
 }
 
@@ -141,5 +146,6 @@ func DestroyMetricsStore(store *Store) {
 	prometheus.Unregister(store.BuildInfo)
 	prometheus.Unregister(store.KubeApiReadCacheHits)
 	prometheus.Unregister(store.KubeApiReadRequests)
+	prometheus.Unregister(store.EventsTypeReceived)
 	store = nil
 }

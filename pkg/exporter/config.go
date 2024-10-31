@@ -12,10 +12,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const (
-	DefaultCacheSize = 1024
-)
-
 // Config allows configuration
 type Config struct {
 	// Route is the top route that the events will match
@@ -33,16 +29,9 @@ type Config struct {
 	KubeQPS            float32                   `yaml:"kubeQPS,omitempty"`
 	KubeBurst          int                       `yaml:"kubeBurst,omitempty"`
 	MetricsNamePrefix  string                    `yaml:"metricsNamePrefix,omitempty"`
-	OmitLookup         bool                      `yaml:"omitLookup,omitempty"`
-	CacheSize          int                       `yaml:"cacheSize,omitempty"`
 }
 
 func (c *Config) SetDefaults() {
-	if c.CacheSize == 0 {
-		c.CacheSize = DefaultCacheSize
-		log.Debug().Msg("setting config.cacheSize=1024 (default)")
-	}
-
 	if c.KubeBurst == 0 {
 		c.KubeBurst = rest.DefaultBurst
 		log.Debug().Msg(fmt.Sprintf("setting config.kubeBurst=%d (default)", rest.DefaultBurst))
