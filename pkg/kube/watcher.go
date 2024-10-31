@@ -7,7 +7,6 @@ import (
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -108,26 +107,26 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	}
 	ev.Event.ManagedFields = nil
 
-	if e.omitLookup {
-		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
-	} else {
-		objectMetadata, err := e.objectMetadataCache.GetObjectMetadata(&event.InvolvedObject, e.clientset, e.dynamicClient, e.metricsStore)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				ev.InvolvedObject.Deleted = true
-				log.Error().Err(err).Msg("Object not found, likely deleted")
-			} else {
-				log.Error().Err(err).Msg("Failed to get object metadata")
-			}
-			ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
-		} else {
-			ev.InvolvedObject.Labels = objectMetadata.Labels
-			ev.InvolvedObject.Annotations = objectMetadata.Annotations
-			ev.InvolvedObject.OwnerReferences = objectMetadata.OwnerReferences
-			ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
-			ev.InvolvedObject.Deleted = objectMetadata.Deleted
-		}
-	}
+	//if e.omitLookup {
+	ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
+	//} else {
+	//	objectMetadata, err := e.objectMetadataCache.GetObjectMetadata(&event.InvolvedObject, e.clientset, e.dynamicClient, e.metricsStore)
+	//	if err != nil {
+	//		if errors.IsNotFound(err) {
+	//			ev.InvolvedObject.Deleted = true
+	//			log.Error().Err(err).Msg("Object not found, likely deleted")
+	//		} else {
+	//			log.Error().Err(err).Msg("Failed to get object metadata")
+	//		}
+	//		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
+	//	} else {
+	//		ev.InvolvedObject.Labels = objectMetadata.Labels
+	//		ev.InvolvedObject.Annotations = objectMetadata.Annotations
+	//		ev.InvolvedObject.OwnerReferences = objectMetadata.OwnerReferences
+	//		ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
+	//		ev.InvolvedObject.Deleted = objectMetadata.Deleted
+	//	}
+	//}
 
 	e.fn(ev)
 }
