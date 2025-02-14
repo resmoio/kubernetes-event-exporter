@@ -522,3 +522,22 @@ receivers:
         foo: bar
       url: http://127.0.0.1:3100/loki/api/v1/push
 ```
+
+### Fluentd
+
+[Fluentd](https://www.fluentd.org/) or [Fluentbit](https://fluentbit.io/) are open source data collectors, which lets you unify the data collection and consumption for a better use and understanding of data. You might choose to send all events to Fluentd or Fluentbit to centralize logging and further route or process logs as needed. This can be especially useful for monitoring, alerting, and analyzing Kubernetes events. 
+Note: Fluentd/Fleuntbit should be configured with in_tcp or in_forwarding input plugins.
+
+```yaml
+# ...
+receivers:
+  - name: "dump"
+    fluent:
+      host: "localhost"
+      port: 5500
+      tag: "kube-event"
+      bufferSize: 1048576
+      # If set to true, all dots in labels and annotation keys are replaced by underscores. Defaults false
+      deDot: true|false
+      layout: # Optional
+```

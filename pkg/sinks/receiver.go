@@ -11,6 +11,7 @@ type ReceiverConfig struct {
 	Syslog        *SyslogConfig        `yaml:"syslog"`
 	Stdout        *StdoutConfig        `yaml:"stdout"`
 	Elasticsearch *ElasticsearchConfig `yaml:"elasticsearch"`
+	Fluent        *FluentConfig        `yaml:"fluent"`
 	Kinesis       *KinesisConfig       `yaml:"kinesis"`
 	Firehose      *FirehoseConfig      `yaml:"firehose"`
 	OpenSearch    *OpenSearchConfig    `yaml:"opensearch"`
@@ -64,6 +65,10 @@ func (r *ReceiverConfig) GetSink() (Sink, error) {
 
 	if r.Elasticsearch != nil {
 		return NewElasticsearch(r.Elasticsearch)
+	}
+
+	if r.Fluent != nil {
+		return NewFluent(r.Fluent)
 	}
 
 	if r.Kinesis != nil {
