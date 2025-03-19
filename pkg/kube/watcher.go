@@ -57,8 +57,12 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 	return watcher
 }
 
-func (e *EventWatcher) OnAdd(obj interface{}) {
-	event := obj.(*corev1.Event)
+func (e *EventWatcher) OnAdd(obj interface{}, isInInitialList bool) {
+	event, ok := obj.(*corev1.Event)
+	if !ok {
+		log.Error().Msg("Failed to cast object to Event")
+		return
+	}
 	e.onEvent(event)
 }
 
