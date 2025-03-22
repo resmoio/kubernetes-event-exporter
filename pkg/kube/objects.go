@@ -47,10 +47,14 @@ func NewObjectMetadataProvider(size int) ObjectMetadataProvider {
 func (o *ObjectMetadataCache) GetObjectMetadata(reference *v1.ObjectReference, clientset *kubernetes.Clientset, dynClient dynamic.Interface, metricsStore *metrics.Store) (ObjectMetadata, error) {
 	// ResourceVersion changes when the object is updated.
 	// We use "UID/ResourceVersion" as cache key so that if the object is updated we get the new metadata.
-	cacheKey := strings.Join([]string{string(reference.UID), reference.ResourceVersion}, "/")
-	if val, ok := o.cache.Get(cacheKey); ok {
-		metricsStore.KubeApiReadCacheHits.Inc()
-		return val.(ObjectMetadata), nil
+	// UID and ResourceVersion are not always present, so we need to check if they exist before using them as cache key.
+	var cacheKey string
+	if reference.UID != "" && reference.ResourceVersion != "" {
+		cacheKey := strings.Join([]string{string(reference.UID), reference.ResourceVersion}, "/")
+		if val, ok := o.cache.Get(cacheKey); ok {
+			metricsStore.KubeApiReadCacheHits.Inc()
+			return val.(ObjectMetadata), nil
+		}
 	}
 
 	var group, version string
@@ -97,6 +101,8 @@ func (o *ObjectMetadataCache) GetObjectMetadata(reference *v1.ObjectReference, c
 		objectMetadata.Deleted = true
 	}
 
-	o.cache.Add(cacheKey, objectMetadata)
+	if cacheKey != "" {
+		o.cache.Add(cacheKey, objectMetadata)
+	}
 	return objectMetadata, nil
 }
