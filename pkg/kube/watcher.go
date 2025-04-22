@@ -49,7 +49,11 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		clientset:           clientset,
 	}
 
-	informer.AddEventHandler(watcher)
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    watcher.OnAdd,
+		UpdateFunc: watcher.OnUpdate,
+		DeleteFunc: watcher.OnDelete,
+	})
 	informer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
 		watcher.metricsStore.WatchErrors.Inc()
 	})

@@ -2,7 +2,9 @@ package metrics
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -42,7 +44,8 @@ func Init(addr string, tlsConf string) {
 	// Add Go module build info.
 	prometheus.MustRegister(collectors.NewBuildInfoCollector())
 
-	promLogger := promLogger{}
+	// Use standard slog logger
+	promLogger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	metricsPath := "/metrics"
 
 	// Expose the registered metrics via HTTP.
