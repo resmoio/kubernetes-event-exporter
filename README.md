@@ -170,6 +170,8 @@ receivers:
         insecureSkipVerify: true|false # optional, if set to true, the tls cert won't be verified
         serverName: # optional, the domain, the certificate was issued for, in case it doesn't match the hostname used for the connection
         caFile: # optional, path to the CA file of the trusted authority the cert was signed with
+      # If set to true, gzip compression is used for requests to ElasticSearch. Defaults to false.
+      compressRequestBody: true|false
 ```
 ### OpenSearch
 
@@ -201,6 +203,8 @@ receivers:
         insecureSkipVerify: true|false # optional, if set to true, the tls cert won't be verified
         serverName: # optional, the domain, the certificate was issued for, in case it doesn't match the hostname used for the connection
         caFile: # optional, path to the CA file of the trusted authority the cert was signed with
+      # If set to true, gzip compression is used for requests to OpenSearch. Defaults to false.
+      compressRequestBody: true|false
 ```
 
 ### Slack

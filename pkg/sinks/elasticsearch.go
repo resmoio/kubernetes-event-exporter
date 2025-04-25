@@ -28,12 +28,13 @@ type ElasticsearchConfig struct {
 	// Indexing preferences
 	UseEventID bool `yaml:"useEventID"`
 	// DeDot all labels and annotations in the event. For both the event and the involvedObject
-	DeDot       bool                   `yaml:"deDot"`
-	Index       string                 `yaml:"index"`
-	IndexFormat string                 `yaml:"indexFormat"`
-	Type        string                 `yaml:"type"`
-	TLS         TLS                    `yaml:"tls"`
-	Layout      map[string]interface{} `yaml:"layout"`
+	DeDot               bool                   `yaml:"deDot"`
+	Index               string                 `yaml:"index"`
+	IndexFormat         string                 `yaml:"indexFormat"`
+	Type                string                 `yaml:"type"`
+	TLS                 TLS                    `yaml:"tls"`
+	Layout              map[string]interface{} `yaml:"layout"`
+	CompressRequestBody bool                   `yaml:"compressRequestBody"`
 }
 
 func NewElasticsearch(cfg *ElasticsearchConfig) (*Elasticsearch, error) {
@@ -60,6 +61,7 @@ func NewElasticsearch(cfg *ElasticsearchConfig) (*Elasticsearch, error) {
 		Transport: &http.Transport{
 			TLSClientConfig: tlsClientConfig,
 		},
+		CompressRequestBody: cfg.CompressRequestBody,
 	})
 	if err != nil {
 		return nil, err
