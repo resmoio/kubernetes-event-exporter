@@ -136,6 +136,28 @@ receivers:
       layout: # Optional
 ```
 
+### Feishu (Lark)
+
+[Feishu](https://www.feishu.cn/) (Lark internationally) is an all-in-one collaboration platform. kubernetes-event-exporter can send events to Feishu via custom bot webhooks, allowing you to receive Kubernetes events in your Feishu groups. Below is an example configuration:
+
+```yaml
+# ...
+receivers:
+  - name: "feishu-alerts"
+    feishu:
+      webhookUrl: "https://open.feishu.cn/open-apis/bot/v2/hook/your-webhook-token"
+      message: "Kubernetes Event Notification: {{ .Message }}"
+      title: "Kubernetes Event - {{ .Reason }}"
+      color: "blue" # Card color: blue, wathet, turquoise, green, yellow, orange, red, carmine, violet, purple, indigo, grey
+      fields:
+        Message: "{{ .Message }}"
+        Namespace: "{{ .Namespace }}"
+        Reason: "{{ .Reason }}"
+        Object: "{{ .InvolvedObject.Kind }}/{{ .InvolvedObject.Name }}"
+        Type: "{{ .Type }}"
+        Count: "{{ .Count }}"
+```
+
 ### Elasticsearch
 
 [Elasticsearch](https://www.elastic.co/) is a full-text, distributed search engine which can also do powerful

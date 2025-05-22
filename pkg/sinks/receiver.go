@@ -19,6 +19,7 @@ type ReceiverConfig struct {
 	SQS           *SQSConfig           `yaml:"sqs"`
 	SNS           *SNSConfig           `yaml:"sns"`
 	Slack         *SlackConfig         `yaml:"slack"`
+	Feishu        *FeishuConfig        `yaml:"feishu"`
 	Kafka         *KafkaConfig         `yaml:"kafka"`
 	Pubsub        *PubsubConfig        `yaml:"pubsub"`
 	Opscenter     *OpsCenterConfig     `yaml:"opscenter"`
@@ -92,6 +93,10 @@ func (r *ReceiverConfig) GetSink() (Sink, error) {
 
 	if r.Slack != nil {
 		return NewSlackSink(r.Slack)
+	}
+
+	if r.Feishu != nil {
+		return NewFeishuSink(r.Feishu)
 	}
 
 	if r.Kafka != nil {
