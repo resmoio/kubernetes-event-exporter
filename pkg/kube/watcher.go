@@ -60,6 +60,16 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 func (e *EventWatcher) OnAdd(obj interface{}) {
 	event := obj.(*corev1.Event)
 	e.onEvent(event)
+	if obj == nil {
+		log.Error().Msg("OnAdd Object is nil")
+		return
+	}
+	event, ok := obj.(*corev1.Event)
+	if !ok || event == nil {
+		log.Error().Msg("Not a event obj")
+		return
+	}
+	e.onEvent(event)
 }
 
 func (e *EventWatcher) OnUpdate(oldObj, newObj interface{}) {
