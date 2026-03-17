@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.28.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/Shopify/sarama v1.37.2
-	github.com/aws/aws-sdk-go v1.44.162
+	github.com/aws/aws-sdk-go v1.50.36
 	github.com/elastic/go-elasticsearch/v7 v7.17.7
 	github.com/goccy/go-yaml v1.11.0
 	github.com/hashicorp/golang-lru v0.5.3
@@ -18,7 +18,7 @@ require (
 	github.com/prometheus/exporter-toolkit v0.10.0
 	github.com/rs/zerolog v1.28.0
 	github.com/slack-go/slack v0.12.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.9.0
 	google.golang.org/api v0.107.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	k8s.io/api v0.26.7
@@ -27,6 +27,7 @@ require (
 )
 
 require (
+	github.com/opensearch-project/opensearch-go/v3 v3.1.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 )

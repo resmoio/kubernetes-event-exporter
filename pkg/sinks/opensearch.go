@@ -5,16 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
-	opensearch "github.com/opensearch-project/opensearch-go"
-	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/opensearch-project/opensearch-go/v3"
+	"github.com/opensearch-project/opensearch-go/v3/opensearchapi"
+	requestsigner "github.com/opensearch-project/opensearch-go/v3/signer/aws"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 )
 
 type OpenSearchConfig struct {
@@ -31,23 +31,34 @@ type OpenSearchConfig struct {
 	Type        string                 `yaml:"type"`
 	TLS         TLS                    `yaml:"tls"`
 	Layout      map[string]interface{} `yaml:"layout"`
+	AWSService  string                 `yaml:"awsService"` // Leave blank to not do AWS SigV4 signing. Otherwise, set to "es" for Amazon OpenSearch or "aoss" for Amazon OpenSearch Serverless.
 }
 
 func NewOpenSearch(cfg *OpenSearchConfig) (*OpenSearch, error) {
-
 	tlsClientConfig, err := setupTLS(&cfg.TLS)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup TLS: %w", err)
 	}
-
-	client, err := opensearch.NewClient(opensearch.Config{
+	openSearchConfig := opensearch.Config{
 		Addresses: cfg.Hosts,
 		Username:  cfg.Username,
 		Password:  cfg.Password,
 		Transport: &http.Transport{
 			TLSClientConfig: tlsClientConfig,
 		},
-	})
+	}
+	if cfg.AWSService != "" {
+		// Enable AWS SigV4 signing for OpenSearch requests
+		signer, err := requestsigner.NewSignerWithService(
+			session.Options{SharedConfigState: session.SharedConfigEnable},
+			cfg.AWSService,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize AWS signer: %w", err)
+		}
+		openSearchConfig.Signer = signer
+	}
+	client, err := opensearchapi.NewClient(opensearchapi.Config{Client: openSearchConfig})
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +70,7 @@ func NewOpenSearch(cfg *OpenSearchConfig) (*OpenSearch, error) {
 }
 
 type OpenSearch struct {
-	client *opensearch.Client
+	client *opensearchapi.Client
 	cfg    *OpenSearchConfig
 }
 
@@ -112,34 +123,17 @@ func (e *OpenSearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 		index = e.cfg.Index
 	}
 
-	req := opensearchapi.IndexRequest{
+	req := opensearchapi.IndexReq{
 		Body:  bytes.NewBuffer(toSend),
 		Index: index,
-	}
-
-	// This should not be used for clusters with ES8.0+.
-	if len(e.cfg.Type) > 0 {
-		req.DocumentType = e.cfg.Type
 	}
 
 	if e.cfg.UseEventID {
 		req.DocumentID = string(ev.UID)
 	}
 
-	resp, err := req.Do(ctx, e.client)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode > 399 {
-		rb, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		log.Error().Msgf("Indexing failed: %s", string(rb))
-	}
-	return nil
+	_, err := e.client.Index(ctx, req)
+	return err
 }
 
 func (e *OpenSearch) Close() {
