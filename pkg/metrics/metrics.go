@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/exporter-toolkit/web"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/version"
 	"github.com/rs/zerolog/log"
 )
 

@@ -1,0 +1,62 @@
+name: E2E
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  # In-process integration tests: the real watcher + engine run inside the test
+  # binary against a live kind cluster, across a Kubernetes version matrix.
+  e2e:
+    name: e2e (k8s ${{ matrix.k8s }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # kindest/node tags published for kind v0.24.0.
+        k8s:
+          - v1.29.8
+          - v1.30.4
+          - v1.31.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          version: v0.24.0
+          node_image: kindest/node:${{ matrix.k8s }}
+          cluster_name: kee-e2e
+
+      - name: Run e2e tests
+        run: make e2e
+
+  # Deploy smoke test: build the image, load it into kind, apply the manifests
+  # and assert the exporter rolls out healthy and emits events. Runs on a single
+  # version since it validates packaging/RBAC, not version skew.
+  smoke:
+    name: deploy smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          version: v0.24.0
+          node_image: kindest/node:v1.30.4
+          cluster_name: kee-e2e
+
+      - name: Run deploy smoke test
+        run: make smoke
+        env:
+          KIND_CLUSTER: kee-e2e

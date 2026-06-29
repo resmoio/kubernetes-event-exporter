@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 )
 
 type TeamsConfig struct {

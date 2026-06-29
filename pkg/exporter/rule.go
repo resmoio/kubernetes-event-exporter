@@ -3,7 +3,7 @@ package exporter
 import (
 	"regexp"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 )
 
 // matchString is a method to clean the code. Error handling is omitted here because these

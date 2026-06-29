@@ -13,7 +13,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 )
 

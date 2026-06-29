@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 )
 

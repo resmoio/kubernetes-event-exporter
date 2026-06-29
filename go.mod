@@ -1,4 +1,4 @@
-module github.com/resmoio/kubernetes-event-exporter
+module github.com/mustafaakin/kubernetes-event-exporter
 
 go 1.20
 

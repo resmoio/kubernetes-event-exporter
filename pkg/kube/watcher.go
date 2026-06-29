@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/metrics"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

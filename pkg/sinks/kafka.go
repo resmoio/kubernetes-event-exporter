@@ -11,7 +11,7 @@ import (
 	"os"
 
 	"github.com/Shopify/sarama"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 
 	"github.com/xdg-go/scram"

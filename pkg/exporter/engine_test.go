@@ -1,8 +1,8 @@
 package exporter
 
 import (
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/sinks"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 )
 
 // Sink is the interface that the third-party providers should implement. It should just get the event and

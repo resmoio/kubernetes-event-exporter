@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 )
 

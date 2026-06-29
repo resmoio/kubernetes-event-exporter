@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 	opensearch "github.com/opensearch-project/opensearch-go"
 	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 )
 

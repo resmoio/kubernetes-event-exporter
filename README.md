@@ -27,7 +27,7 @@ kubectl create namespace monitoring
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/resmoio/kubernetes-event-exporter?ref=master
+  - https://github.com/mustafaakin/kubernetes-event-exporter?ref=master
 ```
 
 ### Helm
@@ -522,3 +522,37 @@ receivers:
         foo: bar
       url: http://127.0.0.1:3100/loki/api/v1/push
 ```
+
+## Development
+
+### Unit tests
+
+```console
+make test          # go test with coverage
+go test -race ./... # what CI runs
+```
+
+### Integration (e2e) tests
+
+The `test/e2e` package runs the real event watcher and engine against a live
+Kubernetes cluster, behind the `e2e` build tag so it never runs in the unit
+suite. It is the regression guard for event-delivery behaviour (including
+version skew between `core/v1` and `events.k8s.io/v1`, event enrichment, age
+cut-off and namespace scoping).
+
+```console
+# Against the cluster in your current kube context:
+make e2e
+
+# Spin up a throwaway kind cluster, run e2e + the deploy smoke test, tear down:
+make e2e-kind                                  # default node image
+make e2e-kind KIND_NODE_IMAGE=kindest/node:v1.31.0
+```
+
+The deploy smoke test (`make smoke`) builds the image, loads it into kind,
+applies the manifests in `deploy/`, and asserts the exporter rolls out healthy,
+serves `/-/healthy`, `/-/ready` and `/metrics`, and emits real cluster events.
+
+In CI, the [`E2E` workflow](.github/workflows/e2e.yml) runs the in-process tests
+across a Kubernetes version matrix (1.29–1.31) on every push and pull request,
+plus the deploy smoke test on a single version.

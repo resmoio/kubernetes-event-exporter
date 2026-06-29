@@ -1,22 +1,54 @@
 name: Test
 on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: Build
+    name: Build & unit test
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
 
-    - name: Set up Go 1.20
-      uses: actions/setup-go@v3
-      with:
-        go-version: "1.20"
-      id: go
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -s -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-ed:"; echo "$unformatted"
+            echo "Run 'make fmt' to fix."
+            exit 1
+          fi
 
-    - name: Build
-      run: go build -v .
-    
-    - name: Test
-      run:  go test ./...
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -race -cover ./...
+
+  # Informational for now: the repository has not yet been cleaned up against
+  # golangci-lint's default linters. Once the findings are triaged this job can
+  # drop continue-on-error and become a required check.
+  lint:
+    name: golangci-lint (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59.1

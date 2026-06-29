@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 )
 
 type StdoutConfig struct {

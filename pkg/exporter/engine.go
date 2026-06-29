@@ -3,7 +3,7 @@ package exporter
 import (
 	"reflect"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"github.com/mustafaakin/kubernetes-event-exporter/pkg/kube"
 	"github.com/rs/zerolog/log"
 )
 
