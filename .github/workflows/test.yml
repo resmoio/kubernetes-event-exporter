@@ -51,4 +51,23 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.59.1
+          version: v1.64.8
+
+  # Reports known vulnerabilities in the call graph. Non-blocking because newly
+  # disclosed standard-library advisories would otherwise break unrelated PRs
+  # until the CI Go patch catches up.
+  govulncheck:
+    name: govulncheck (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...

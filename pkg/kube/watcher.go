@@ -25,6 +25,7 @@ type EventWatcher struct {
 	stopper             chan struct{}
 	objectMetadataCache ObjectMetadataProvider
 	omitLookup          bool
+	reportUpdates       bool
 	fn                  EventHandler
 	maxEventAgeSeconds  time.Duration
 	metricsStore        *metrics.Store
@@ -32,7 +33,7 @@ type EventWatcher struct {
 	clientset           *kubernetes.Clientset
 }
 
-func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler, omitLookup bool, cacheSize int) *EventWatcher {
+func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds int64, metricsStore *metrics.Store, fn EventHandler, omitLookup bool, cacheSize int, reportUpdates bool) *EventWatcher {
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	informer := factory.Core().V1().Events().Informer()
@@ -42,6 +43,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 		stopper:             make(chan struct{}),
 		objectMetadataCache: NewObjectMetadataProvider(cacheSize),
 		omitLookup:          omitLookup,
+		reportUpdates:       reportUpdates,
 		fn:                  fn,
 		maxEventAgeSeconds:  time.Second * time.Duration(MaxEventAgeSeconds),
 		metricsStore:        metricsStore,
@@ -57,13 +59,46 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 	return watcher
 }
 
-func (e *EventWatcher) OnAdd(obj interface{}) {
+func (e *EventWatcher) OnAdd(obj interface{}, isInInitialList bool) {
 	event := obj.(*corev1.Event)
 	e.onEvent(event)
 }
 
 func (e *EventWatcher) OnUpdate(oldObj, newObj interface{}) {
-	// Ignore updates
+	// Kubernetes updates the same Event object when an event recurs instead of
+	// creating a new one. Unless reportUpdates is enabled we ignore updates, so
+	// a recurring event is reported only once (its first occurrence via OnAdd).
+	if !e.reportUpdates {
+		return
+	}
+
+	oldEvent, ok := oldObj.(*corev1.Event)
+	if !ok {
+		return
+	}
+	newEvent, ok := newObj.(*corev1.Event)
+	if !ok {
+		return
+	}
+
+	if isNewOccurrence(oldEvent, newEvent) {
+		e.onEvent(newEvent)
+	}
+}
+
+// isNewOccurrence reports whether newEvent represents a genuine new occurrence
+// of the same event rather than an incidental metadata-only update. It handles
+// both the legacy core/v1 count and the events.k8s.io/v1 series model.
+func isNewOccurrence(oldEvent, newEvent *corev1.Event) bool {
+	if newEvent.Count > oldEvent.Count {
+		return true
+	}
+	if newEvent.Series != nil {
+		if oldEvent.Series == nil || newEvent.Series.Count > oldEvent.Series.Count {
+			return true
+		}
+	}
+	return false
 }
 
 // Ignore events older than the maxEventAgeSeconds

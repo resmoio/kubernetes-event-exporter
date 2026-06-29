@@ -301,3 +301,65 @@ func TestOnEvent_DeletedObjects(t *testing.T) {
 	require.Equal(t, map[string]string(nil), event.InvolvedObject.Labels)
 	require.Equal(t, []metav1.OwnerReference(nil), event.InvolvedObject.OwnerReferences)
 }
+
+func TestIsNewOccurrence(t *testing.T) {
+	tests := []struct {
+		name     string
+		oldEvent corev1.Event
+		newEvent corev1.Event
+		want     bool
+	}{
+		{"count increased", corev1.Event{Count: 1}, corev1.Event{Count: 2}, true},
+		{"count unchanged", corev1.Event{Count: 2}, corev1.Event{Count: 2}, false},
+		{"series newly set", corev1.Event{}, corev1.Event{Series: &corev1.EventSeries{Count: 1}}, true},
+		{"series count increased",
+			corev1.Event{Series: &corev1.EventSeries{Count: 1}},
+			corev1.Event{Series: &corev1.EventSeries{Count: 2}}, true},
+		{"series count unchanged",
+			corev1.Event{Series: &corev1.EventSeries{Count: 3}},
+			corev1.Event{Series: &corev1.EventSeries{Count: 3}}, false},
+		{"metadata-only update", corev1.Event{Count: 1}, corev1.Event{Count: 1}, false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, isNewOccurrence(&tc.oldEvent, &tc.newEvent))
+		})
+	}
+}
+
+func TestOnUpdate_ReportUpdates(t *testing.T) {
+	metricsStore := metrics.NewMetricsStore("test_")
+	defer metrics.DestroyMetricsStore(metricsStore)
+
+	startup := time.Now().Add(-10 * time.Minute)
+	ew := newMockEventWatcher(300, metricsStore)
+	ew.setStartUpTime(startup)
+
+	var emitted int
+	ew.fn = func(e *EnhancedEvent) { emitted++ }
+
+	oldEvent := &corev1.Event{
+		ObjectMeta:    metav1.ObjectMeta{Name: "recurring"},
+		Count:         1,
+		LastTimestamp: metav1.Time{Time: startup.Add(8 * time.Minute)},
+	}
+	newEvent := &corev1.Event{
+		ObjectMeta:    metav1.ObjectMeta{Name: "recurring"},
+		Count:         2,
+		LastTimestamp: metav1.Time{Time: startup.Add(9 * time.Minute)},
+	}
+
+	// Disabled (default): a recurrence is not re-emitted.
+	ew.reportUpdates = false
+	ew.OnUpdate(oldEvent, newEvent)
+	assert.Equal(t, 0, emitted)
+
+	// Enabled: the recurrence is emitted once.
+	ew.reportUpdates = true
+	ew.OnUpdate(oldEvent, newEvent)
+	assert.Equal(t, 1, emitted)
+
+	// Enabled but no new occurrence (metadata-only update): not emitted.
+	ew.OnUpdate(newEvent, newEvent)
+	assert.Equal(t, 1, emitted)
+}

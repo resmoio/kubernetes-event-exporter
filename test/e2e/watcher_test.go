@@ -24,7 +24,7 @@ func hasReason(namespace, reason string) func(*kube.EnhancedEvent) bool {
 // core/v1 API is delivered to the watcher's handler.
 func TestCoreV1EventDelivered(t *testing.T) {
 	ns := createNamespace(t, "kee-corev1")
-	c := startWatcher(t, ns, 3600, true)
+	c := startWatcher(t, ns, 3600, true, false)
 
 	const reason = "CoreV1Probe"
 	createCoreV1Event(t, ns, reason, time.Now())
@@ -41,7 +41,7 @@ func TestCoreV1EventDelivered(t *testing.T) {
 // events.k8s.io/v1 objects through that same watch.
 func TestEventsV1EventDelivered(t *testing.T) {
 	ns := createNamespace(t, "kee-eventsv1")
-	c := startWatcher(t, ns, 3600, true)
+	c := startWatcher(t, ns, 3600, true, false)
 
 	const reason = "EventsV1Probe"
 	createEventsV1Event(t, ns, reason, time.Now())
@@ -68,7 +68,7 @@ func TestInvolvedObjectEnrichment(t *testing.T) {
 		t.Fatalf("create configmap: %v", err)
 	}
 
-	c := startWatcher(t, ns, 3600, false /* omitLookup */)
+	c := startWatcher(t, ns, 3600, false /* omitLookup */, false)
 
 	const reason = "EnrichProbe"
 	ev := baseCoreV1Event(ns, reason, time.Now())
@@ -98,7 +98,7 @@ func TestInvolvedObjectEnrichment(t *testing.T) {
 // through the watcher.
 func TestRealPodFailureEvents(t *testing.T) {
 	ns := createNamespace(t, "kee-podfail")
-	c := startWatcher(t, ns, 3600, true)
+	c := startWatcher(t, ns, 3600, true, false)
 
 	ctx := context.Background()
 	pod, err := clientset.CoreV1().Pods(ns).Create(ctx, &corev1.Pod{
@@ -141,7 +141,7 @@ func TestRealPodFailureEvents(t *testing.T) {
 // maxEventAgeSeconds are dropped while fresh ones are still delivered.
 func TestMaxEventAgeDiscardsOldEvents(t *testing.T) {
 	ns := createNamespace(t, "kee-age")
-	c := startWatcher(t, ns, 120 /* maxEventAgeSeconds */, true)
+	c := startWatcher(t, ns, 120 /* maxEventAgeSeconds */, true, false)
 
 	const oldReason = "TooOldProbe"
 	const freshReason = "FreshProbe"
@@ -163,7 +163,7 @@ func TestMaxEventAgeDiscardsOldEvents(t *testing.T) {
 func TestNamespaceScoping(t *testing.T) {
 	watched := createNamespace(t, "kee-watched")
 	other := createNamespace(t, "kee-other")
-	c := startWatcher(t, watched, 3600, true)
+	c := startWatcher(t, watched, 3600, true, false)
 
 	const reason = "ScopeProbe"
 	createCoreV1Event(t, other, reason, time.Now())
@@ -176,6 +176,79 @@ func TestNamespaceScoping(t *testing.T) {
 	// The out-of-scope event must never appear.
 	if got := c.find(hasReason(other, reason)); len(got) > 0 {
 		t.Fatalf("watcher scoped to %q received %d events from %q", watched, len(got), other)
+	}
+}
+
+// TestRecurringEventReEmittedWhenReportUpdates verifies that, with
+// reportUpdates enabled, a recurring event (Kubernetes bumps Count on the same
+// object) is delivered again rather than only on its first occurrence.
+func TestRecurringEventReEmittedWhenReportUpdates(t *testing.T) {
+	ns := createNamespace(t, "kee-update")
+	c := startWatcher(t, ns, 3600, true, true /* reportUpdates */)
+
+	ctx := context.Background()
+	const reason = "RecurProbe"
+	ev := baseCoreV1Event(ns, reason, time.Now())
+	ev.Count = 1
+	created, err := clientset.CoreV1().Events(ns).Create(ctx, ev, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatalf("create event: %v", err)
+	}
+
+	eventually(t, 30*time.Second, "initial occurrence delivered", func() bool {
+		return len(c.find(hasReason(ns, reason))) >= 1
+	})
+
+	// Simulate a recurrence the way the API server does: same object, higher
+	// count and a fresh last-seen timestamp.
+	created.Count = 2
+	created.LastTimestamp = metav1.NewTime(time.Now())
+	if _, err := clientset.CoreV1().Events(ns).Update(ctx, created, metav1.UpdateOptions{}); err != nil {
+		t.Fatalf("update event: %v", err)
+	}
+
+	eventually(t, 30*time.Second, "recurrence re-emitted", func() bool {
+		for _, e := range c.find(hasReason(ns, reason)) {
+			if e.Count >= 2 {
+				return true
+			}
+		}
+		return false
+	})
+}
+
+// TestRecurringEventIgnoredByDefault verifies the default behaviour: event
+// updates are not re-emitted, so a recurrence is reported only once.
+func TestRecurringEventIgnoredByDefault(t *testing.T) {
+	ns := createNamespace(t, "kee-noupdate")
+	c := startWatcher(t, ns, 3600, true, false /* reportUpdates */)
+
+	ctx := context.Background()
+	const reason = "NoRecurProbe"
+	ev := baseCoreV1Event(ns, reason, time.Now())
+	ev.Count = 1
+	created, err := clientset.CoreV1().Events(ns).Create(ctx, ev, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatalf("create event: %v", err)
+	}
+
+	eventually(t, 30*time.Second, "initial occurrence delivered", func() bool {
+		return len(c.find(hasReason(ns, reason))) >= 1
+	})
+
+	created.Count = 2
+	created.LastTimestamp = metav1.NewTime(time.Now())
+	if _, err := clientset.CoreV1().Events(ns).Update(ctx, created, metav1.UpdateOptions{}); err != nil {
+		t.Fatalf("update event: %v", err)
+	}
+
+	// Give the watcher time to (not) process the update, then assert the
+	// recurrence was never delivered.
+	time.Sleep(3 * time.Second)
+	for _, e := range c.find(hasReason(ns, reason)) {
+		if e.Count >= 2 {
+			t.Fatalf("recurrence was delivered despite reportUpdates being disabled")
+		}
 	}
 }
 

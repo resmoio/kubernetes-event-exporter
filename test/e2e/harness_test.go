@@ -118,10 +118,10 @@ func newStore(t *testing.T) *metrics.Store {
 
 // startWatcher constructs a real EventWatcher scoped to namespace, wires it to
 // the returned collector, starts it, and registers Stop on cleanup.
-func startWatcher(t *testing.T, namespace string, maxEventAgeSeconds int64, omitLookup bool) *collector {
+func startWatcher(t *testing.T, namespace string, maxEventAgeSeconds int64, omitLookup, reportUpdates bool) *collector {
 	t.Helper()
 	c := &collector{}
-	w := kube.NewEventWatcher(restConfig, namespace, maxEventAgeSeconds, newStore(t), c.handle, omitLookup, 1024)
+	w := kube.NewEventWatcher(restConfig, namespace, maxEventAgeSeconds, newStore(t), c.handle, omitLookup, 1024, reportUpdates)
 	w.Start()
 	t.Cleanup(w.Stop)
 	return c

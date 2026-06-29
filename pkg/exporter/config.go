@@ -35,6 +35,12 @@ type Config struct {
 	MetricsNamePrefix  string                    `yaml:"metricsNamePrefix,omitempty"`
 	OmitLookup         bool                      `yaml:"omitLookup,omitempty"`
 	CacheSize          int                       `yaml:"cacheSize,omitempty"`
+	// ReportUpdates, when true, also emits an event when an existing event
+	// recurs (its count increases). Kubernetes updates the same Event object
+	// on each recurrence rather than creating a new one, so with this disabled
+	// (the default) repeated events are reported only once. Enable it if you
+	// were missing recurring events such as repeated CrashLoopBackOff.
+	ReportUpdates bool `yaml:"reportUpdates,omitempty"`
 }
 
 func (c *Config) SetDefaults() {

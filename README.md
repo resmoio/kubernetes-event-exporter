@@ -94,6 +94,14 @@ to keep the config file clean of secrets.
     ```
     maxEventAgeSeconds: 60
     ```
+- If a recurring event (for example a repeated `CrashLoopBackOff`) is only
+  reported once: Kubernetes updates the same Event object and bumps its `count`
+  on each recurrence rather than creating a new one, and by default the exporter
+  reports only the first occurrence. Enable update reporting to emit each
+  recurrence:
+    ```
+    reportUpdates: true
+    ```
 
 ### Opsgenie
 

@@ -3,6 +3,7 @@ logFormat: json
 maxEventAgeSeconds: 10
 kubeQPS: 60
 kubeBurst: 60
+# reportUpdates: true # Also emit recurring events (count increments), not just their first occurrence. Defaults to false.
 # namespace: my-namespace-only # Omitting it defaults to all namespaces.
 route:
   # Main route
